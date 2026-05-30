@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "es6",
+        "target": "es2017",
+        "types": ["node"],
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "noEmitHelpers": true,
+        "noEmitOnError": true
+    },
+    "include": ["."],
+    "exclude": [
+        "node_modules"
+    ]
+}
