@@ -34,4 +34,11 @@ export default function interprete(src: string): void {
     executor.execute()
 }
 
-interprete(`print 10 + 10`)
+interprete(`
+    print !0;
+    print !1;
+    print !2;
+    print !"";
+    print !"Hello, World!";
+    print "Hello World";
+`)

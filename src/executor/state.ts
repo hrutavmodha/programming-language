@@ -1,9 +1,9 @@
 export default class ExecutorState {
-    private instructions: ArrayBuffer
+    private instructions: Uint8Array
     private instructionPointer: number = 0
     private stack: Array<any> = []
 
-    constructor(newInstructions: ArrayBuffer) {
+    constructor(newInstructions: Uint8Array) {
         this.instructions = newInstructions
         this.instructionPointer = 0
         this.stack = []
@@ -26,7 +26,7 @@ export default class ExecutorState {
     }
     
     isAtEnd(): boolean {
-        return this.instructionPointer >= this.instructions.byteLength
+        return this.instructionPointer >= this.instructions.length
     }
 
     increment(): void {

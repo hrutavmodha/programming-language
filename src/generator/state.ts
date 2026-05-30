@@ -5,14 +5,14 @@ export default class GeneratorState {
         type: 'Program',
         body: []
     }
-    private bytecode: ArrayBuffer
+    private bytecode: Array<number>
     private constantPool: Array<any>
     private constantPoolCursor: number = 0
     private cursor: number = 0
 
     constructor(ast: Program) {
         this.ast = ast
-        this.bytecode = new ArrayBuffer(10)
+        this.bytecode = []
         this.cursor = 0
         this.constantPool = []
     }
@@ -21,17 +21,8 @@ export default class GeneratorState {
         return this.ast
     }
 
-    reallocate(elementNo: number) {
-        let newBytecodes = new ArrayBuffer(this.bytecode.byteLength + elementNo)
-        newBytecodes = this.bytecode
-    }
-
     push(element: number) {
-        if (this.cursor <= this.bytecode.byteLength) {
-            this.reallocate(10)
-        }
-
-        this.bytecode[this.cursor] = element
+        this.bytecode.push(element)
         this.cursor++
     }
 
@@ -46,8 +37,8 @@ export default class GeneratorState {
         return this.constantPool[index]
     }
 
-    getBytecode() {
-        return this.bytecode
+    getBytecode(): Uint8Array {
+        return new Uint8Array(this.bytecode)
     }
 
     getConstantPool() {

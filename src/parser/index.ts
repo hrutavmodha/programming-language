@@ -32,6 +32,7 @@ export default class Parser {
     private parsePrintStatement() {
         this.state.expect('KEYWORD_PRINT')
         const valueToPrint = this.parseExpression()
+        this.state.expect('SEMI_COLON')
         return {
             type: 'PrintStatement',
             arguments: valueToPrint
@@ -107,19 +108,17 @@ export default class Parser {
     }
 
     private parseUnary(): any {
-        let left: any = this.parsePrimary()
-
-        while (this.state.peek()?.type === 'MINUS' || this.state.peek()?.type === 'NOT') {
+        if (this.state.peek()?.type === 'MINUS' || this.state.peek()?.type === 'NOT') {
             const operator = this.state.advance().lexeme
-            const right = this.parseUnary()
-
-            left = {
+            const operand = this.parseUnary()
+            
+            return {
                 type: 'UnaryExpression',
-                operator, left, right
+                operator, operand
             }
         }
 
-        return left
+        return this.parsePrimary()
     }
 
     private parsePrimary(): any {
