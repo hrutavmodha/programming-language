@@ -21,9 +21,20 @@ export default class Parser {
         switch (token.type) {
             case 'KEYWORD_LET': {
                 return this.parseVariableDeclaration()
+            } case 'KEYWORD_PRINT': {
+                return this.parsePrintStatement()
             } default: {
                 return this.parseExpression()
             }
+        }
+    }
+
+    private parsePrintStatement() {
+        this.state.expect('KEYWORD_PRINT')
+        const valueToPrint = this.parseExpression()
+        return {
+            type: 'PrintStatement',
+            arguments: valueToPrint
         }
     }
 
@@ -82,7 +93,7 @@ export default class Parser {
     private parseMultiplicative(): any {
         let left: any = this.parseUnary()
 
-        while (this.state.peek()?.type === 'STAR' || this.state.peek()?.type === 'SLASH') {
+        while (this.state.peek()?.type === 'STAR' || this.state.peek()?.type === 'SLASH' || this.state.peek()?.type === 'PERCENT') {
             const operator = this.state.advance().lexeme
             const right = this.parseUnary()
 

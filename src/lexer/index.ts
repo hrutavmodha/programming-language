@@ -30,6 +30,9 @@ export default class Lexer {
             case 'false': {
                 this.state.push('BOOLEAN_LITERAL', lexeme, null)
                 break
+            } case 'print': { 
+                this.state.push('KEYWORD_PRINT', lexeme, null)
+                break
             } default: {
                 this.state.push('IDENTIFIER', lexeme, null)
             }
