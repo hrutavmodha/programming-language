@@ -13,6 +13,7 @@ export default class Generator {
             switch (node.type) {
                 case 'PrintStatement': {
                     this.generatePrintStatement(node)
+                    break
                 }
                 default: {
                     this.generateExpression(node)
@@ -53,13 +54,33 @@ export default class Generator {
                     }
                 }
                 break
-            } case 'NumberLiteral': {
+            } case 'UnaryExpression': {
+                this.generateExpression(node.operand)
+
+                switch (node.operator) {
+                    case '-': {
+                        this.state.push(8)
+                        break
+                    } case '!': {
+                        this.state.push(9)
+                        break
+                    }
+                } 
+                break
+            }
+            case 'NumberLiteral': {
                 const cpIdx = this.state.storeLiteral(Number(node.value))
                 this.state.push(6)
                 this.state.push(cpIdx)
                 break
             } case 'BooleanLiteral': {
-                const cpIdx = this.state.storeLiteral(Boolean(node.value))
+                let value: boolean
+                if (node.value === 'true') {
+                    value = true
+                } else if (node.value === 'false') {
+                    value = false
+                }
+                const cpIdx = this.state.storeLiteral(value)
                 this.state.push(6)
                 this.state.push(cpIdx)
                 break

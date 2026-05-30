@@ -42,6 +42,14 @@ export default class Executor {
                 } case 7: {
                     console.log(this.state.pop())
                     break
+                } case 8: {
+                    const value = this.state.pop()
+                    this.state.push(-value)
+                    break
+                } case 9: {
+                    const value = this.state.pop()
+                    this.state.push(!value)
+                    break
                 }
             }
             
