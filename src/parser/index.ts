@@ -1,3 +1,4 @@
+import error from '../shared/error.ts';
 import ParserState from './state.ts';
 
 export default class Parser {
@@ -20,8 +21,10 @@ export default class Parser {
 
         switch (token.type) {
             case 'KEYWORD_LET': {
+            } case 'KEYWORD_CONST': {
                 return this.parseVariableDeclaration()
-            } case 'KEYWORD_PRINT': {
+            }
+            case 'KEYWORD_PRINT': {
                 return this.parsePrintStatement()
             } default: {
                 return this.parseExpression()
@@ -152,9 +155,23 @@ export default class Parser {
     }
 
     private parseVariableDeclaration(): any {
-        this.state.expect('KEYWORD_LET')
+        let isConstant: boolean
 
-        const identifier = this.state.peek().lexeme
+        switch (this.state.peek().type) {
+            case 'KEYWORD_LET': {
+                isConstant = false
+                this.state.increment()
+                break
+            } case 'KEYWORD_CONST': {
+                isConstant = true
+                this.state.increment()
+                break
+            } default: {
+                error(`Unexpected token "${this.state.peek().lexeme}"`)
+            }
+        }
+
+        const name = this.state.peek().lexeme
         let value: any = null
         
         this.state.expect('IDENTIFIER')
@@ -162,13 +179,17 @@ export default class Parser {
         if (this.state.peek().type === 'EQUALS') {
             this.state.increment()
             value = this.parseExpression()
+        } else {
+            if (isConstant) {
+                error(`Constant must be initialized`)
+            }
         }
 
         this.state.expect('SEMI_COLON')
 
         return {
             type: 'VariableDeclaration',
-            identifier, value
+            name, value
         }
     }
 }

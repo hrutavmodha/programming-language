@@ -26,6 +26,12 @@ export default class Lexer {
             } case 'const': {
                 this.state.push('KEYWORD_CONST', lexeme, null)
                 break
+            } case 'if': {
+                this.state.push('KEYWORD_IF', lexeme, null)
+                break
+            } case 'else': {
+                this.state.push('KEYWORD_ELSE', lexeme, null)
+                break
             } case 'true':
             case 'false': {
                 this.state.push('BOOLEAN_LITERAL', lexeme, null)
