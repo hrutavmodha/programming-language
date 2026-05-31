@@ -9,4 +9,11 @@ export default class SymbolTable {
         }
         this.symbolTable[variable] = value
     }
+
+    get(variable: string) {
+        if (!(variable in this.symbolTable)) {
+            error(`Undefined variable "${variable}"`)
+        }
+        return this.symbolTable[variable]
+    }
 }

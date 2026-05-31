@@ -1,4 +1,4 @@
-import type { Node } from '../../types/nodes.d.ts';
+import type { Node } from '../../types/nodes.d.ts'
 import GeneratorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
 
@@ -17,8 +17,10 @@ export default class Generator {
                 case 'PrintStatement': {
                     this.generatePrintStatement(node)
                     break
-                }
-                default: {
+                } case 'VariableDeclaration': {
+                    this.generateVariableDeclaration(node)
+                    break
+                } default: {
                     this.generateExpression(node)
                 }
             }
@@ -29,6 +31,17 @@ export default class Generator {
 
     getConstantPool() {
         return this.constantPool
+    }
+
+    private generateVariableDeclaration(node: Node) {
+        if (node.value !== null) {
+            this.generateExpression(node.value)
+        } else {
+            this.state.push(10)
+        }
+        const nameIdx = this.constantPool.store(node.name)
+        this.state.push(11)
+        this.state.push(nameIdx)
     }
 
     private generatePrintStatement(node: Node) {
@@ -94,6 +107,11 @@ export default class Generator {
             } case 'StringLiteral': {
                 const cpIdx = this.constantPool.store(String(node.value))
                 this.state.push(6)
+                this.state.push(cpIdx)
+                break
+            } case 'Identifier': {
+                const cpIdx = this.constantPool.store(node.name)
+                this.state.push(12)
                 this.state.push(cpIdx)
                 break
             }

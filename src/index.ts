@@ -11,22 +11,22 @@ import LexerUtils from './lexer/utils.ts'
 import Parser from './parser/index.ts'
 import ParserState from './parser/state.ts'
 
-export default function interprete(src: string): void {
+export function interprete(src: string): any {
     const lexerState = new LexerState(src)
     const lexerUtils = new LexerUtils()
     const lexer = new Lexer(lexerState, lexerUtils)
     const tokens = lexer.tokenize()
-    console.log("Tokens:", JSON.stringify(tokens, null, 2))
+    // console.log("Tokens:", JSON.stringify(tokens, null, 2))
 
     const parserState = new ParserState(tokens)
     const parser = new Parser(parserState)
     const ast = parser.parse()
-    console.log("AST:", JSON.stringify(ast, null, 2))
+    // console.log("AST:", JSON.stringify(ast, null, 2))
 
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    console.log("ByteCodes:", JSON.stringify(bytecodes, null, 2))
+    // console.log("ByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool()) 
@@ -35,5 +35,8 @@ export default function interprete(src: string): void {
 }
 
 interprete(`
-    let a;
+    let a = 10 * 2;
+    let b = a * a;
+    print a; 
+    print b;
 `)
