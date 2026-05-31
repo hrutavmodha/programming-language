@@ -1,13 +1,13 @@
 import ExecutorState from './state.ts'
-import GeneratorState from '../generator/state.ts'
+import ConstantPool from '../shared/constant-pool.ts'
 
 export default class Executor {
     private state: ExecutorState
-    private generatorState: GeneratorState
+    private constantPool: ConstantPool
 
-    constructor(state: ExecutorState, generatorState: GeneratorState) {
+    constructor(state: ExecutorState, constantPool: ConstantPool) {
         this.state = state
-        this.generatorState = generatorState
+        this.constantPool = constantPool
     }
 
     execute() {
@@ -36,7 +36,7 @@ export default class Executor {
                 } case 6: {
                     this.state.increment()
                     const valueIdx = this.state.peek()
-                    const value = this.generatorState.getLiteral(valueIdx)
+                    const value = this.constantPool.get(valueIdx)
                     this.state.push(value)
                     break
                 } case 7: {

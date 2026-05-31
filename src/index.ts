@@ -29,16 +29,11 @@ export default function interprete(src: string): void {
     console.log("ByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     const executorState = new ExecutorState(bytecodes)
-    const executor = new Executor(executorState, generatorState) 
+    const executor = new Executor(executorState, generator.getConstantPool()) 
 
     executor.execute()
 }
 
 interprete(`
-    print !0;
-    print !1;
-    print !2;
-    print !"";
-    print !"Hello, World!";
-    print "Hello World";
+    let a;
 `)

@@ -1,11 +1,14 @@
 import type { Node } from '../../types/nodes.d.ts';
 import GeneratorState from './state.ts'
+import ConstantPool from '../shared/constant-pool.ts'
 
 export default class Generator {
     private state: GeneratorState;
+    private constantPool: ConstantPool;
 
     constructor(state: GeneratorState) {
         this.state = state
+        this.constantPool = new ConstantPool()
     }
 
     generate() {
@@ -22,6 +25,10 @@ export default class Generator {
         })
 
         return this.state.getBytecode()
+    }
+
+    getConstantPool() {
+        return this.constantPool
     }
 
     private generatePrintStatement(node: Node) {
@@ -69,7 +76,7 @@ export default class Generator {
                 break
             }
             case 'NumberLiteral': {
-                const cpIdx = this.state.storeLiteral(Number(node.value))
+                const cpIdx = this.constantPool.store(Number(node.value))
                 this.state.push(6)
                 this.state.push(cpIdx)
                 break
@@ -80,12 +87,12 @@ export default class Generator {
                 } else if (node.value === 'false') {
                     value = false
                 }
-                const cpIdx = this.state.storeLiteral(value)
+                const cpIdx = this.constantPool.store(value!)
                 this.state.push(6)
                 this.state.push(cpIdx)
                 break
             } case 'StringLiteral': {
-                const cpIdx = this.state.storeLiteral(String(node.value))
+                const cpIdx = this.constantPool.store(String(node.value))
                 this.state.push(6)
                 this.state.push(cpIdx)
                 break
