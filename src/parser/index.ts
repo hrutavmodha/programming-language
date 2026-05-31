@@ -27,29 +27,69 @@ export default class Parser {
             case 'KEYWORD_PRINT': {
                 return this.parsePrintStatement()
             } default: {
-                return this.parseExpression()
+                const node = this.parseExpression()
+                this.state.expect('SEMI_COLON')
+                return node
             }
         }
     }
 
-    private parsePrintStatement() {
-        this.state.expect('KEYWORD_PRINT')
-        const valueToPrint = this.parseExpression()
-        this.state.expect('SEMI_COLON')
-        return {
-            type: 'PrintStatement',
-            arguments: valueToPrint
-        }
+    private parseExpression(): any {
+        return this.parseAssignment()
     }
 
-    private parseExpression(): any {
-        return this.parseEquality()
+    private parseAssignment(): any {
+        let left = this.parseLogicalOr()
+
+        while (this.state.peek().type === 'EQUALS') {
+            const operator = this.state.advance().lexeme
+            const right = this.parseAssignment()
+
+            left = {
+                type: 'AssignmentExpression',
+                operator, left, right
+            }
+        }
+
+        return left
+    }
+
+    private parseLogicalOr(): any {
+        let left: any = this.parseLogicalAnd()
+
+        while (this.state.peek()?.type === 'OR') {
+            const operator = this.state.advance().lexeme
+            const right = this.parseLogicalAnd()
+
+            left = {
+                type: 'LogicalExpression',
+                operator, left, right
+            }
+        }
+
+        return left
+    }
+
+    private parseLogicalAnd(): any {
+        let left: any = this.parseEquality()
+
+        while (this.state.peek()?.type === 'AND') {
+            const operator = this.state.advance().lexeme
+            const right = this.parseEquality()
+
+            left = {
+                type: 'LogicalExpression',
+                operator, left, right
+            }
+        }
+
+        return left
     }
 
     private parseEquality(): any {
         let left: any = this.parseComparison()
 
-        while (this.state.peek()?.type === 'EQUALS' || this.state.peek()?.type === 'DOUBLE_EQUALS') {
+        while (this.state.peek()?.type === 'NOT_EQUALS' || this.state.peek()?.type === 'DOUBLE_EQUALS') {
             const operator = this.state.advance().lexeme
             const right = this.parseComparison()
 
@@ -151,6 +191,19 @@ export default class Parser {
             this.state.expect('CLOSING_PARENTHESIS')
 
             return node
+        }
+    }
+
+    private parsePrintStatement() {
+        this.state.expect('KEYWORD_PRINT')
+
+        const valueToPrint = this.parseExpression()
+        
+        this.state.expect('SEMI_COLON')
+        
+        return {
+            type: 'PrintStatement',
+            arguments: valueToPrint
         }
     }
 

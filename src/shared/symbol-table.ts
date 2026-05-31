@@ -7,6 +7,7 @@ export default class SymbolTable {
         if (variable in this.symbolTable) {
             error(`Variable "${variable}" is already declared`)
         }
+
         this.symbolTable[variable] = value
     }
 
@@ -14,6 +15,15 @@ export default class SymbolTable {
         if (!(variable in this.symbolTable)) {
             error(`Undefined variable "${variable}"`)
         }
+
         return this.symbolTable[variable]
+    }
+
+    update(variable: string, value: any) {
+        if (!(variable in this.symbolTable)) {
+            error(`Undefined variable "${variable}"`)
+        }
+
+        this.symbolTable[variable] = value
     }
 }

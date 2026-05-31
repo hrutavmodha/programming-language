@@ -66,11 +66,16 @@ export default class Executor {
                     const name = this.constantPool.get(this.state.peek())
                     this.state.push(this.symbolTable.get(name))
                     break
+                } case 13: {
+                    this.state.increment()
+                    const value = this.state.pop()
+                    const varIdx = this.state.peek()
+                    const variable = this.constantPool.get(varIdx)
+                    this.symbolTable.update(variable, value)
+                    this.state.push(value)
+                    break
                 }
             }
-            // console.log(this.constantPool)
-            // console.log(this.symbolTable)
-            // console.log(this.state)
             this.state.increment()
         }
     }

@@ -1,6 +1,7 @@
 import type { Node } from '../../types/nodes.d.ts'
 import GeneratorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
+import error from '../shared/error.ts'
 
 export default class Generator {
     private state: GeneratorState;
@@ -87,8 +88,18 @@ export default class Generator {
                     }
                 } 
                 break
-            }
-            case 'NumberLiteral': {
+            } case 'AssignmentExpression': {
+                if (node.left.type !== 'Identifier') {
+                    error(`Expected identifier name, got ${node.left.type}`)
+                }
+
+                const varIdx = this.constantPool.store(node.left.name)
+                this.generateExpression(node.left)
+                this.generateExpression(node.right)
+                this.state.push(13)
+                this.state.push(varIdx)
+                break
+            } case 'NumberLiteral': {
                 const cpIdx = this.constantPool.store(Number(node.value))
                 this.state.push(6)
                 this.state.push(cpIdx)

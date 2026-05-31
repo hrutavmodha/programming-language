@@ -1,3 +1,6 @@
+import Analyzer from './analyzer/index.ts'
+import AnalyzerState from './analyzer/state.ts'
+
 import Executor from './executor/index.ts'
 import ExecutorState from './executor/state.ts'
 
@@ -16,17 +19,22 @@ export function interprete(src: string): any {
     const lexerUtils = new LexerUtils()
     const lexer = new Lexer(lexerState, lexerUtils)
     const tokens = lexer.tokenize()
-    // console.log("Tokens:", JSON.stringify(tokens, null, 2))
+    console.log("Tokens:", JSON.stringify(tokens, null, 2))
 
     const parserState = new ParserState(tokens)
     const parser = new Parser(parserState)
     const ast = parser.parse()
-    // console.log("AST:", JSON.stringify(ast, null, 2))
+    console.log("AST:", JSON.stringify(ast, null, 2))
+
+    const analyzerState = new AnalyzerState(ast)
+    const analyzer = new Analyzer(analyzerState)
+    const analyzedAst = analyzer.analyze()
+    console.log("Analyzed AST:", JSON.stringify(analyzedAst, null, 2))
 
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    // console.log("ByteCodes:", JSON.stringify(bytecodes, null, 2))
+    console.log("ByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool()) 
@@ -35,8 +43,5 @@ export function interprete(src: string): any {
 }
 
 interprete(`
-    let a = 10 * 2;
-    let b = a * a;
-    print a; 
-    print b;
+    print 10 + "Hi";
 `)
