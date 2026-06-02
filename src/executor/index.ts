@@ -1,16 +1,17 @@
 import ExecutorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
 import SymbolTable from '../shared/symbol-table.ts'
+import { timeStamp } from 'console';
 
 export default class Executor {
     private state: ExecutorState;
     private constantPool: ConstantPool;
     private symbolTable: SymbolTable;
 
-    constructor(state: ExecutorState, constantPool: ConstantPool) {
+    constructor(state: ExecutorState, constantPool: ConstantPool, symbolTable: SymbolTable) {
         this.state = state
         this.constantPool = constantPool
-        this.symbolTable = new SymbolTable()
+        this.symbolTable = symbolTable
     }
 
     execute() {
@@ -73,6 +74,50 @@ export default class Executor {
                     const variable = this.constantPool.get(varIdx)
                     this.symbolTable.update(variable, value)
                     this.state.push(value)
+                    break
+                } case 14: {
+                    this.state.increment()
+                    const value = this.state.pop()
+
+                    if (value === false) {
+                        this.state.jump(this.state.peek())
+                        continue
+                    } else {
+                        break
+                    }
+                } case 15: {
+                    this.state.increment()
+                    this.state.jump(this.state.peek())
+                    continue
+                } case 16: {
+                    const b = this.state.pop()
+                    const a = this.state.pop()
+                    this.state.push(a > b)
+                    break
+                } case 17: {
+                    const b = this.state.pop()
+                    const a = this.state.pop()
+                    this.state.push(a < b)
+                    break
+                } case 18: {
+                    const b = this.state.pop()
+                    const a = this.state.pop()
+                    this.state.push(a >= b)
+                    break
+                } case 19: {
+                    const b = this.state.pop()
+                    const a = this.state.pop()
+                    this.state.push(a <= b)
+                    break
+                } case 20: {
+                    const b = this.state.pop()
+                    const a = this.state.pop()
+                    this.state.push(a === b)
+                    break
+                } case 21: {
+                    const b = this.state.pop()
+                    const a = this.state.pop()
+                    this.state.push(a !== b)
                     break
                 }
             }

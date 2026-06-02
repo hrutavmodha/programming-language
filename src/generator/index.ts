@@ -13,25 +13,76 @@ export default class Generator {
     }
 
     generate() {
-        this.state.getAst().body.forEach((node: Node) => {
-            switch (node.type) {
-                case 'PrintStatement': {
-                    this.generatePrintStatement(node)
-                    break
-                } case 'VariableDeclaration': {
-                    this.generateVariableDeclaration(node)
-                    break
-                } default: {
-                    this.generateExpression(node)
-                }
-            }
-        })
+        
+        while (!this.state.isAtEnd()) {
+            this.generateStatement(this.state.peek())
+            this.state.increment()
+        }
 
         return this.state.getBytecode()
     }
 
     getConstantPool() {
         return this.constantPool
+    }
+
+    private generateStatement(node: Node) {
+        switch (node?.type) {
+            case 'PrintStatement': {
+                this.generatePrintStatement(node)
+                break
+            } case 'VariableDeclaration': {
+                this.generateVariableDeclaration(node)
+                break
+            } case 'BlockStatement': {
+                this.generateBlockStatement(node)
+                break
+            } case 'IfStatement': {
+                this.generateIfStatement(node)
+                break
+            } default: {
+                this.generateExpression(node)
+            }
+        }
+    } 
+
+    private generateBlockStatement(node: Node) {
+        let cursor: number = 0
+
+        while (node.body[cursor]) {
+            this.generateStatement(node.body[cursor])
+            cursor++
+        }
+    }
+
+    private generateIfStatement(node: Node) {        
+        this.generateExpression(node.condition)
+        
+        this.state.push(14) // JumpIfFalse
+        
+        // Store current length for future use of indexing
+        const jmpIfFalseIdx = this.state.length()
+        this.state.push(-1) // Means patch it later
+
+        this.generateStatement(node.consequent)
+
+        
+
+        if (node.alternate) {
+            this.state.push(15) // Jump
+            const jmpIdx = this.state.length()
+            this.state.push(-1)
+
+            // Skip consequent instruction execution if stack.pop() is false, and directly jump to the end of if statement
+            this.state.update(jmpIfFalseIdx, this.state.length()) 
+
+            this.generateStatement(node.alternate)
+
+            // Set jumping index to the current length of array because stack top was true, so we skip executing the else branch
+            this.state.update(jmpIdx, this.state.length())
+        } else {
+            this.state.update(jmpIfFalseIdx, this.state.length())
+        }
     }
 
     private generateVariableDeclaration(node: Node) {
@@ -51,7 +102,7 @@ export default class Generator {
     }
 
     private generateExpression(node: Node) {
-        switch (node.type) {
+        switch (node?.type) {
             case 'ArithmeticExpression': {
                 this.generateExpression(node.left)
                 this.generateExpression(node.right)
@@ -75,7 +126,32 @@ export default class Generator {
                     }
                 }
                 break
-            } case 'UnaryExpression': {
+            } case 'ComparisonExpression': {
+                this.generateExpression(node.left)
+                this.generateExpression(node.right)
+
+                switch (node.operator) {
+                    case '>': {
+                        this.state.push(16)
+                        break
+                    } case '<': {
+                        this.state.push(17)
+                        break
+                    } case '>=': {
+                        this.state.push(18)
+                        break
+                    } case '<=': {
+                        this.state.push(19)
+                        break
+                    } case '==': {
+                        this.state.push(20)
+                        break
+                    } case '!=': {
+                        this.state.push(21)
+                        break
+                    }
+                }
+            }  case 'UnaryExpression': {
                 this.generateExpression(node.operand)
 
                 switch (node.operator) {
@@ -94,7 +170,6 @@ export default class Generator {
                 }
 
                 const varIdx = this.constantPool.store(node.left.name)
-                this.generateExpression(node.left)
                 this.generateExpression(node.right)
                 this.state.push(13)
                 this.state.push(varIdx)

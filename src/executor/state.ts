@@ -24,6 +24,10 @@ export default class ExecutorState {
     advance(): number {
         return this.instructions[this.instructionPointer++]
     }
+
+    jump(index: number) {
+        this.instructionPointer = index
+    }
     
     isAtEnd(): boolean {
         return this.instructionPointer >= this.instructions.length

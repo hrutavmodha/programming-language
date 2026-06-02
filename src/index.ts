@@ -14,6 +14,8 @@ import LexerUtils from './lexer/utils.ts'
 import Parser from './parser/index.ts'
 import ParserState from './parser/state.ts'
 
+import { writeFileSync } from 'fs'
+
 export function interprete(src: string): any {
     const lexerState = new LexerState(src)
     const lexerUtils = new LexerUtils()
@@ -29,19 +31,30 @@ export function interprete(src: string): any {
     const analyzerState = new AnalyzerState(ast)
     const analyzer = new Analyzer(analyzerState)
     const analyzedAst = analyzer.analyze()
-    console.log("Analyzed AST:", JSON.stringify(analyzedAst, null, 2))
+    // console.log("Analyzed AST:", JSON.stringify(analyzedAst, null, 2))
 
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
     console.log("ByteCodes:", JSON.stringify(bytecodes, null, 2))
 
+    writeFileSync('compiled', bytecodes)
+
     const executorState = new ExecutorState(bytecodes)
-    const executor = new Executor(executorState, generator.getConstantPool()) 
+    const executor = new Executor(executorState, generator.getConstantPool(), analyzer.getSymbolTable()) 
+
 
     executor.execute()
 }
 
 interprete(`
-    print 10 + "Hi";
+    let a = 10;
+
+    if a == 10 {
+        print "Hello, World!";
+    } else {
+        let b = "10;";
+        print b; 
+    }
 `)
+

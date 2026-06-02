@@ -20,12 +20,14 @@ export default class Parser {
         const token = this.state.peek()
 
         switch (token.type) {
-            case 'KEYWORD_LET': {
-            } case 'KEYWORD_CONST': {
-                return this.parseVariableDeclaration()
-            }
             case 'KEYWORD_PRINT': {
                 return this.parsePrintStatement()
+            } case 'KEYWORD_LET': {
+                return this.parseVariableDeclaration()
+            } case 'KEYWORD_IF': {
+                return this.parseIfStatement()
+            } case 'OPENING_CURLY_BRACE': {
+                return this.parseBlockStatement()
             } default: {
                 const node = this.parseExpression()
                 this.state.expect('SEMI_COLON')
@@ -208,22 +210,8 @@ export default class Parser {
     }
 
     private parseVariableDeclaration(): any {
-        let isConstant: boolean
-
-        switch (this.state.peek().type) {
-            case 'KEYWORD_LET': {
-                isConstant = false
-                this.state.increment()
-                break
-            } case 'KEYWORD_CONST': {
-                isConstant = true
-                this.state.increment()
-                break
-            } default: {
-                error(`Unexpected token "${this.state.peek().lexeme}"`)
-            }
-        }
-
+        this.state.expect('KEYWORD_LET')
+        
         const name = this.state.peek().lexeme
         let value: any = null
         
@@ -232,10 +220,6 @@ export default class Parser {
         if (this.state.peek().type === 'EQUALS') {
             this.state.increment()
             value = this.parseExpression()
-        } else {
-            if (isConstant) {
-                error(`Constant must be initialized`)
-            }
         }
 
         this.state.expect('SEMI_COLON')
@@ -243,6 +227,43 @@ export default class Parser {
         return {
             type: 'VariableDeclaration',
             name, value
+        }
+    }
+
+    private parseBlockStatement() {
+        let node = {
+            type: 'BlockStatement',
+            body: []
+        }
+        this.state.expect('OPENING_CURLY_BRACE')
+
+        while (!this.state.isAtEnd() && this.state.peek()?.type !== 'CLOSING_CURLY_BRACE') {
+            node.body.push(this.parseStatement())
+        }
+
+        this.state.expect('CLOSING_CURLY_BRACE')
+        return node
+    }
+
+    private parseIfStatement(): any {
+        this.state.expect('KEYWORD_IF')
+
+        const condition = this.parseExpression()
+        const body = this.parseStatement()
+        let alternate: any
+        
+        if (this.state.peek()?.type === 'KEYWORD_ELSE') {
+            this.state.increment()
+            alternate = this.parseStatement()
+        } else {
+            alternate = null
+        }
+
+        return {
+            type: 'IfStatement',
+            condition,
+            consequent: body,
+            alternate
         }
     }
 }
