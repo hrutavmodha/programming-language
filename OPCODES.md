@@ -25,3 +25,9 @@ This document defines the current instruction set for the virtual machine. Each 
 | **19** | `0x13` | `LESS_THAN_OR_EQUAL` | None | `[b, a] -> [a <= b]` | Pops `b`, then `a`. Pushes `true` if `a <= b`. |
 | **20** | `0x14` | `EQUAL` | None | `[b, a] -> [a == b]` | Pops `b`, then `a`. Pushes `true` if `a == b`. |
 | **21** | `0x15` | `NOT_EQUAL` | None | `[b, a] -> [a != b]` | Pops `b`, then `a`. Pushes `true` if `a != b`. |
+| **22** | `0x16` | `ENTER_SCOPE` | None | `[] -> []` | Enters a new block scope by pushing a new Map onto the scope stack. |
+| **23** | `0x17` | `EXIT_SCOPE` | None | `[] -> []` | Exits the current block scope by popping it from the scope stack. |
+| **24** | `0x18` | `POP` | None | `[value] -> []` | Pops the top value off the evaluation stack. |
+| **25** | `0x19` | `DEFINE_CONST` | 1: `nameIdx` | `[value] -> []` | Pops a value and defines it as a constant in the Symbol Table. |
+
+

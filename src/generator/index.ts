@@ -13,11 +13,13 @@ export default class Generator {
     }
 
     generate() {
-        
+        this.state.push(22)
+
         while (!this.state.isAtEnd()) {
             this.generateStatement(this.state.peek())
             this.state.increment()
         }
+        this.state.push(23)
 
         return this.state.getBytecode()
     }
@@ -33,6 +35,9 @@ export default class Generator {
                 break
             } case 'VariableDeclaration': {
                 this.generateVariableDeclaration(node)
+                break
+            } case 'ConstantDeclaration': {
+                this.generateConstantDeclaration(node)
                 break
             } case 'BlockStatement': {
                 this.generateBlockStatement(node)
@@ -107,6 +112,17 @@ export default class Generator {
         } else {
             this.state.update(jmpIfFalseIdx, this.state.length())
         }
+    }
+
+    private generateConstantDeclaration(node: Node) {
+        if (node.value !== null) {
+            this.generateExpression(node.value)
+        } else {
+            this.state.push(10)
+        }
+        const nameIdx = this.constantPool.store(node.name)
+        this.state.push(25)
+        this.state.push(nameIdx)
     }
 
     private generateVariableDeclaration(node: Node) {
@@ -197,6 +213,7 @@ export default class Generator {
                 this.generateExpression(node.right)
                 this.state.push(13)
                 this.state.push(varIdx)
+                this.state.push(24) // Pop
                 break
             } case 'NumberLiteral': {
                 const cpIdx = this.constantPool.store(Number(node.value))

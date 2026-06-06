@@ -1,9 +1,14 @@
 export interface BaseSymbol { 
-    type: 'variable' | 'function' | 'class'
+    type: 'variable' | 'constant' | 'function' | 'class'
 }
 
 export interface VariableSymbol extends BaseSymbol {
     dataType: any
+}
+
+export interface ConstantSymbol extends BaseSymbol {
+    dataType: any,
+    value?: any
 }
 
 export interface FunctionSymbol extends BaseSymbol {
@@ -17,6 +22,8 @@ export interface ClassSymbol extends BaseSymbol {
     properties: Map<string, VariableSymbol>
 }
 
-export type Symbol = VariableSymbol | FunctionSymbol | ClassSymbol
+export type Symbol = VariableSymbol | ConstantSymbol | FunctionSymbol | ClassSymbol
+
 export type ScopeInterface = Map<string, Symbol>
+
 export type ScopeStackInterface = ScopeInterface[]

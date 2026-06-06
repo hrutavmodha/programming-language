@@ -34,7 +34,8 @@ export default class Analyzer {
                     type: 'PrintStatement',
                     arguments: this.analyzeExpression(node.arguments)
                 }
-            } case 'VariableDeclaration': {
+            } case 'VariableDeclaration':
+            case 'ConstantDeclaration': {
                 const value = this.analyzeExpression(node.value)
                 const currentScope = this.symbolTable.pop()
 

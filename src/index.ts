@@ -15,8 +15,6 @@ import LexerUtils from './lexer/utils.ts'
 import Parser from './parser/index.ts'
 import ParserState from './parser/state.ts'
 
-// import { writeFileSync } from 'fs'
-
 export function interprete(src: string): any {
     const lexerState = new LexerState(src)
     const lexerUtils = new LexerUtils()
@@ -29,10 +27,10 @@ export function interprete(src: string): any {
     const ast = parser.parse()
     console.log("AST:", JSON.stringify(ast, null, 2))
 
-    const analyzerState = new AnalyzerState(ast)
-    const analyzer = new Analyzer(analyzerState)
-    const analyzedAst = analyzer.analyze()
-    console.log("Analyzed AST:", JSON.stringify(analyzedAst, null, 2))
+    // const analyzerState = new AnalyzerState(ast)
+    // const analyzer = new Analyzer(analyzerState)
+    // const analyzedAst = analyzer.analyze()
+    // console.log("Analyzed AST:", JSON.stringify(analyzedAst, null, 2))
 
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
@@ -46,11 +44,8 @@ export function interprete(src: string): any {
 }
 
 interprete(`
-    let i = 0;
-
-    while i < 10 {
-        print i;
-        i = i + 1;
-    }
+    const a = 10;
+    a = a + 20;
+    print a;
 `)
 

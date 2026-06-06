@@ -1,7 +1,9 @@
 import type {
+    ConstantSymbol,
     ScopeInterface,
     ScopeStackInterface,
-    Symbol
+    Symbol,
+    VariableSymbol
 } from '../../types/scope.d.ts'
 import error from './error.ts'
 
@@ -13,7 +15,6 @@ export class Scope {
     }
 
     public store(variable: string, value: any) {
-        console.log("Symbols are:", this.symbols)
         if (this.symbols.has(variable)) {
             error(`Variable "${variable}" is already declared`)
         }
@@ -40,17 +41,127 @@ export class Scope {
 }
 
 export class ScopeStack {
-    private scopeStack: ScopeStackInterface
+    scopeStack: ScopeStackInterface
 
     constructor() {
-        this.scopeStack = new Array<ScopeInterface>()
+        this.scopeStack = []
     }
 
-    public push(scope: ScopeInterface) {
+    push(scope: ScopeInterface) {
         this.scopeStack.push(scope)
     }
 
-    public pop() {
+    pop() {
         return this.scopeStack.pop()
+    }
+
+    get(name: string): any {
+        const popped: ScopeInterface[] = []
+        let value: any = undefined
+        let isFound = false
+
+        while (true) {
+            const scope = this.pop()
+            if (!scope) {
+                break
+            }
+            popped.push(scope)
+            if (scope.has(name)) {
+                const symbol = scope.get(name)
+                if (symbol) {
+                    value = (symbol as VariableSymbol | ConstantSymbol).dataType
+                    isFound = true
+                    break
+                }
+            }
+        }
+
+        for (let i = popped.length - 1; i >= 0; i--) {
+            const scopeToPush = popped[i]
+            if (scopeToPush) {
+                this.push(scopeToPush)
+            }
+        }
+
+        if (!isFound) {
+            error(`Undefined variable "${name}"`)
+        }
+
+        return value
+    }
+
+    storeConstant(name: string, value: any): void {
+        const scope = this.pop()
+        if (!scope) {
+            error("No active scope")
+        }
+
+        if (scope.has(name)) {
+            error(`Constant "${name}" is already declared`)
+        }
+
+        const symbol: Symbol = {
+            type: 'constant',
+            dataType: value
+        }
+        scope.set(name, symbol)
+        this.push(scope)
+    }
+
+    storeVariable(name: string, value: any): void {
+        const scope = this.pop()
+        if (!scope) {
+            error("No active scope")
+        }
+
+        if (scope.has(name)) {
+            error(`Variable "${name}" is already declared`)
+        }
+        const symbol: Symbol = {
+            type: 'variable',
+            dataType: value
+        }
+        scope.set(name, symbol)
+        this.push(scope)
+    }
+
+    updateVariable(name: string, value: any): void {
+        const popped: ScopeInterface[] = []
+        let isFound = false
+
+        while (true) {
+            const scope = this.pop()
+
+            if (!scope) {
+                break
+            }
+
+            popped.push(scope)
+
+            if (scope.has(name)) {
+
+                const symbol = scope.get(name)
+                isFound = true
+
+                if (symbol.type === 'variable') {
+                    (symbol as VariableSymbol).dataType = value
+                    break
+                } else if (symbol.type === 'constant') {
+                    error(`Cannot re-assign the constant`)
+                    break
+                }
+            }
+        }
+
+        for (let i = popped.length - 1; i >= 0; i--) {
+            const scopeToPush = popped[i]
+            if (scopeToPush) {
+                this.push(scopeToPush)
+            }
+        }
+
+        if (!isFound) {
+            error(`Undefined variable "${name}"`)
+        }
     }
 }

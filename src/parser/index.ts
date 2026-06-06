@@ -23,6 +23,8 @@ export default class Parser {
                 return this.parsePrintStatement()
             } case 'KEYWORD_LET': {
                 return this.parseVariableDeclaration()
+            } case 'KEYWORD_CONST': {
+                return this.parseConstantDeclaration()
             } case 'KEYWORD_IF': {
                 return this.parseIfStatement()
             } case 'OPENING_CURLY_BRACE': {
@@ -227,6 +229,24 @@ export default class Parser {
 
         return {
             type: 'VariableDeclaration',
+            name, value
+        }
+    }
+
+    private parseConstantDeclaration(): any {
+        this.state.expect('KEYWORD_CONST')
+
+        const name = this.state.peek().lexeme
+
+        this.state.expect('IDENTIFIER')
+        this.state.expect('EQUALS')
+
+        const value = this.parseExpression()
+
+        this.state.expect('SEMI_COLON')
+
+        return {
+            type: 'ConstantDeclaration',
             name, value
         }
     }
