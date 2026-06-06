@@ -36,4 +36,8 @@ export default class ExecutorState {
     increment(): void {
         this.instructionPointer++
     }
+
+    getStack(): Array<any> {
+        return this.stack
+    }
 }

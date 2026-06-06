@@ -3,9 +3,16 @@ export default class ConstantPool {
     private cursor: number = 0
 
     store(value: string | boolean | number): number {
+        for (let i = 0; i < this.cursor; i++) {
+            if (value === this.pool[i]) {
+                return i
+            }
+        }
+
         this.pool[this.cursor] = value
         const index = this.cursor
         this.cursor++
+        
         return index
     }
 

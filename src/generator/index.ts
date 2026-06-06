@@ -37,6 +37,9 @@ export default class Generator {
             } case 'BlockStatement': {
                 this.generateBlockStatement(node)
                 break
+            } case 'WhileStatement': {
+                this.generateWhileStatement(node)
+                break
             } case 'IfStatement': {
                 this.generateIfStatement(node)
                 break
@@ -46,13 +49,34 @@ export default class Generator {
         }
     } 
 
+    private generateWhileStatement(node: Node) {
+        const startIdx = this.state.length()
+
+        this.generateExpression(node.condition)
+
+        this.state.push(14)
+        const jmpIfFalseIdx = this.state.length()
+        this.state.push(-1)
+
+        this.generateStatement(node.body)
+
+        this.state.push(15)
+        this.state.push(startIdx)
+
+        this.state.update(jmpIfFalseIdx, this.state.length())
+    } 
+
     private generateBlockStatement(node: Node) {
         let cursor: number = 0
+
+        this.state.push(22) // Enter Scope
 
         while (node.body[cursor]) {
             this.generateStatement(node.body[cursor])
             cursor++
         }
+
+        this.state.push(23) // Exit Scope
     }
 
     private generateIfStatement(node: Node) {        
@@ -62,7 +86,7 @@ export default class Generator {
         
         // Store current length for future use of indexing
         const jmpIfFalseIdx = this.state.length()
-        this.state.push(-1) // Means patch it later
+        this.state.push(-1) // To patch it later
 
         this.generateStatement(node.consequent)
 

@@ -32,6 +32,9 @@ export default class Lexer {
             } case 'else': {
                 this.state.push('KEYWORD_ELSE', lexeme, null)
                 break
+            } case 'while': {
+                this.state.push('KEYWORD_WHILE', lexeme, null)
+                break
             } case 'true':
             case 'false': {
                 this.state.push('BOOLEAN_LITERAL', lexeme, null)

@@ -1,16 +1,17 @@
 import type { Node } from '../../types/nodes.d.ts'
+import type { Symbol } from '../../types/scope.ts'
 import error from '../shared/error.ts'
 import AnalyzerState from './state.ts'
-import SymbolTable from '../shared/symbol-table.ts'
+import { ScopeStack } from '../shared/scope.ts'
 
 export default class Analyzer {
     private state: AnalyzerState;
-    private symbolTable: SymbolTable;
+    private symbolTable: ScopeStack;
 
     constructor(state: AnalyzerState) {
         this.state = state
-        this.symbolTable = new SymbolTable()
-
+        this.symbolTable = new ScopeStack()
+        this.symbolTable.push(new Map<string, Symbol>())
     }
 
     getSymbolTable() {
@@ -35,14 +36,22 @@ export default class Analyzer {
                 }
             } case 'VariableDeclaration': {
                 const value = this.analyzeExpression(node.value)
-                if (node.name in this.symbolTable) {
-                    console.log(this.symbolTable)
-                    error(`Variable "${node.name}" is already declared`)
-                } if (value.type === 'NumberLiteral' || value.type === 'StringLiteral') { 
-                    this.symbolTable[node.name] = value.value
-                } else {
-                    this.symbolTable[node.name] = null
+                const currentScope = this.symbolTable.pop()
+
+                if (!currentScope) {
+                    error("No active scope")
                 }
+                if (currentScope.has(node.name)) {
+                    error(`Variable "${node.name}" is already declared`)
+                }
+                const dataType = (value.type === 'NumberLiteral' || value.type === 'StringLiteral') ? value.value : null
+                const symbol: Symbol = {
+                    type: 'variable',
+                    dataType
+                }
+                currentScope.set(node.name, symbol)
+                this.symbolTable.push(currentScope)
+                break
             } default: {
                 return this.analyzeExpression(node)
             }

@@ -1,17 +1,96 @@
 import ExecutorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
-import SymbolTable from '../shared/symbol-table.ts'
-import { timeStamp } from 'console';
+import { ScopeStack } from '../shared/scope.ts'
+import type { Symbol, ScopeInterface, VariableSymbol } from '../../types/scope.ts'
+import error from '../shared/error.ts'
 
 export default class Executor {
     private state: ExecutorState;
     private constantPool: ConstantPool;
-    private symbolTable: SymbolTable;
+    private symbolTable: ScopeStack;
 
-    constructor(state: ExecutorState, constantPool: ConstantPool, symbolTable: SymbolTable) {
+    constructor(state: ExecutorState, constantPool: ConstantPool) {
         this.state = state
         this.constantPool = constantPool
-        this.symbolTable = symbolTable
+        this.symbolTable = new ScopeStack()
+        this.symbolTable.push(new Map<string, Symbol>())
+    }
+
+    private getFromSymbolTable(name: string): any {
+        const popped: ScopeInterface[] = []
+        let value: any = undefined
+        let found = false
+
+        while (true) {
+            const scope = this.symbolTable.pop()
+            if (!scope) {
+                break
+            }
+            popped.push(scope)
+            if (scope.has(name)) {
+                const symbol = scope.get(name)
+                if (symbol && symbol.type === 'variable') {
+                    value = (symbol as VariableSymbol).dataType
+                    found = true
+                    break
+                }
+            }
+        }
+
+        for (let i = popped.length - 1; i >= 0; i--) {
+            this.symbolTable.push(popped[i])
+        }
+
+        if (!found) {
+            error(`Undefined variable "${name}"`)
+        }
+
+        return value
+    }
+
+    private storeInSymbolTable(name: string, value: any) {
+        const scope = this.symbolTable.pop()
+        if (!scope) {
+            error("No active scope")
+        }
+        if (scope.has(name)) {
+            error(`Variable "${name}" is already declared`)
+        }
+        const symbol: Symbol = {
+            type: 'variable',
+            dataType: value
+        }
+        scope.set(name, symbol)
+        this.symbolTable.push(scope)
+    }
+
+    private updateInSymbolTable(name: string, value: any) {
+        const popped: ScopeInterface[] = []
+        let found = false
+
+        while (true) {
+            const scope = this.symbolTable.pop()
+            if (!scope) {
+                break
+            }
+            popped.push(scope)
+            if (scope.has(name)) {
+                const symbol = scope.get(name)
+                if (symbol && symbol.type === 'variable') {
+                    (symbol as VariableSymbol).dataType = value
+                    found = true
+                    break
+                }
+            }
+        }
+
+        for (let i = popped.length - 1; i >= 0; i--) {
+            this.symbolTable.push(popped[i])
+        }
+
+        if (!found) {
+            error(`Undefined variable "${name}"`)
+        }
     }
 
     execute() {
@@ -44,7 +123,7 @@ export default class Executor {
                     this.state.push(value)
                     break
                 } case 7: {
-                    console.log(this.state.pop())
+                    process.stdout.write(String(this.state.pop()) + '\n')
                     break
                 } case 8: {
                     const value = this.state.pop()
@@ -60,20 +139,19 @@ export default class Executor {
                 } case 11: {
                     this.state.increment()
                     const name = this.constantPool.get(this.state.peek())
-                    this.symbolTable.store(name, this.state.pop())
+                    this.storeInSymbolTable(name, this.state.pop())
                     break
                 } case 12: {
                     this.state.increment()
                     const name = this.constantPool.get(this.state.peek())
-                    this.state.push(this.symbolTable.get(name))
+                    this.state.push(this.getFromSymbolTable(name))
                     break
                 } case 13: {
                     this.state.increment()
                     const value = this.state.pop()
                     const varIdx = this.state.peek()
                     const variable = this.constantPool.get(varIdx)
-                    this.symbolTable.update(variable, value)
-                    this.state.push(value)
+                    this.updateInSymbolTable(variable, value)
                     break
                 } case 14: {
                     this.state.increment()
@@ -119,9 +197,18 @@ export default class Executor {
                     const a = this.state.pop()
                     this.state.push(a !== b)
                     break
+                } case 22: {
+                    this.symbolTable.push(new Map<string, Symbol>())
+                    break
+                } case 23: {
+                    this.symbolTable.pop()
+                    break
                 }
             }
             this.state.increment()
         }
+        console.log("Stack:", JSON.stringify(this.state.getStack(), null, 2))
+        console.log("Symbol Table:", JSON.stringify(this.symbolTable, null, 2))
+        console.log("Constant Pool:", JSON.stringify(this.constantPool, null, 2))
     }
 }

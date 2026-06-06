@@ -1,12 +1,12 @@
 import type { Node, Program } from '../../types/nodes.d.ts'
-import SymbolTable from '../shared/symbol-table.ts'
+import { ScopeStack } from '../shared/scope.ts'
 
 export default class AnalyzerState {
     private ast: Program;
     private analyzedAst: Program;
     private cursor: number = 0
     private analyzedAstCursor: number = 0
-    symbolTable: SymbolTable;
+    scopeStack: ScopeStack;
 
     constructor(ast: Program) {
         this.ast = ast
@@ -15,7 +15,7 @@ export default class AnalyzerState {
             type: 'Program',
             body: []
         }
-        this.symbolTable = new SymbolTable()
+        this.scopeStack = new ScopeStack()
     }
     
 

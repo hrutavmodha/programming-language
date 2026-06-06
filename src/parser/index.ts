@@ -18,7 +18,6 @@ export default class Parser {
 
     private parseStatement(): any {
         const token = this.state.peek()
-
         switch (token.type) {
             case 'KEYWORD_PRINT': {
                 return this.parsePrintStatement()
@@ -28,6 +27,8 @@ export default class Parser {
                 return this.parseIfStatement()
             } case 'OPENING_CURLY_BRACE': {
                 return this.parseBlockStatement()
+            } case 'KEYWORD_WHILE': {
+                return this.parseWhileStatement()
             } default: {
                 const node = this.parseExpression()
                 this.state.expect('SEMI_COLON')
@@ -264,6 +265,19 @@ export default class Parser {
             condition,
             consequent: body,
             alternate
+        }
+    }
+
+    private parseWhileStatement(): any {
+        this.state.expect('KEYWORD_WHILE')
+
+        const condition = this.parseExpression()
+        const body = this.parseStatement()
+
+        return {
+            type: 'WhileStatement',
+            condition,
+            body
         }
     }
 }
