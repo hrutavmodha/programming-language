@@ -18,6 +18,7 @@ export default class Parser {
 
     private parseStatement(): any {
         const token = this.state.peek()
+        
         switch (token.type) {
             case 'KEYWORD_PRINT': {
                 return this.parsePrintStatement()
@@ -31,6 +32,10 @@ export default class Parser {
                 return this.parseBlockStatement()
             } case 'KEYWORD_WHILE': {
                 return this.parseWhileStatement()
+            } case 'KEYWORD_BREAK': {
+                return this.parseBreakStatement()
+            } case 'KEYWORD_CONTINUE': {
+                return this.parseContinueStatement()
             } default: {
                 const node = this.parseExpression()
                 this.state.expect('SEMI_COLON')
@@ -299,5 +304,19 @@ export default class Parser {
             condition,
             body
         }
+    }
+
+    private parseBreakStatement(): any {
+        this.state.expect('KEYWORD_BREAK')
+        this.state.expect('SEMI_COLON')
+
+        return { type: 'BreakStatement' }
+    }
+
+    private parseContinueStatement(): any {
+        this.state.expect('KEYWORD_CONTINUE')
+        this.state.expect('SEMI_COLON')
+
+        return { type: 'ContinueStatement' }
     }
 }

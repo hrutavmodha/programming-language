@@ -39,6 +39,12 @@ export default class Lexer {
             case 'false': {
                 this.state.push('BOOLEAN_LITERAL', lexeme, null)
                 break
+            } case 'break': {
+                this.state.push('KEYWORD_BREAK', lexeme, null)
+                break
+            } case 'continue': {
+                this.state.push('KEYWORD_CONTINUE', lexeme, null)
+                break
             } case 'print': { 
                 this.state.push('KEYWORD_PRINT', lexeme, null)
                 break

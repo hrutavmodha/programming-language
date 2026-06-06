@@ -30,33 +30,54 @@ export default class Analyzer {
     private analyzeStatement(node: Node): any {
         switch (node.type) {
             case 'PrintStatement': {
-                return {
-                    type: 'PrintStatement',
-                    arguments: this.analyzeExpression(node.arguments)
-                }
+                return this.analyzePrintStatement(node)
             } case 'VariableDeclaration':
             case 'ConstantDeclaration': {
-                const value = this.analyzeExpression(node.value)
-                const currentScope = this.symbolTable.pop()
-
-                if (!currentScope) {
-                    error("No active scope")
-                }
-                if (currentScope.has(node.name)) {
-                    error(`Variable "${node.name}" is already declared`)
-                }
-                const dataType = (value.type === 'NumberLiteral' || value.type === 'StringLiteral') ? value.value : null
-                const symbol: Symbol = {
-                    type: 'variable',
-                    dataType
-                }
-                currentScope.set(node.name, symbol)
-                this.symbolTable.push(currentScope)
-                break
+                return this.analyzeVariableDeclaration(node)
+            } case 'IfStatement': {
+                return this.analyzeIfStatement(node)
+            } case 'WhileStatement': {
+                return this.analyzeWhileStatement(node)
             } default: {
                 return this.analyzeExpression(node)
             }
         }
+    }
+
+    private analyzePrintStatement(node: Node) {
+        return {
+            type: 'PrintStatement',
+            arguments: this.analyzeExpression(node.arguments)
+        }
+    }
+
+    private analyzeVariableDeclaration(node: Node) {
+        const value = this.analyzeExpression(node.value)
+        const currentScope = this.symbolTable.pop()
+        if (!currentScope) {
+            error("No active scope")
+        }
+        if (currentScope.has(node.name)) {
+            error(`Variable "${node.name}" is already declared`)
+        }
+        const dataType = (value.type === 'NumberLiteral' || value.type === 'StringLiteral') ? value.value : null
+        const symbol: Symbol = {
+            type: 'variable',
+            dataType
+        }
+        currentScope.set(node.name, symbol)
+        this.symbolTable.push(currentScope)
+        return node
+    }
+
+    private analyzeIfStatement(node: Node) {
+        // TODO
+        return node
+    }
+
+    private analyzeWhileStatement(node: Node) {
+        // TODO
+        return node
     }
 
     private analyzeExpression(node: Node) {
