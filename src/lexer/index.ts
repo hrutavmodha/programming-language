@@ -60,6 +60,9 @@ export default class Lexer {
             } case 'case': {
                 this.state.push('KEYWORD_CASE', lexeme, null)
                 break
+            } case 'default': {
+                this.state.push('KEYWORD_DEFAULT', lexeme, null)
+                break
             } default: {
                 this.state.push('IDENTIFIER', lexeme, null)
             }

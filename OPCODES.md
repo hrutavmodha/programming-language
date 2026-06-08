@@ -29,5 +29,8 @@ This document defines the current instruction set for the virtual machine. Each 
 | **23** | `0x17` | `EXIT_SCOPE` | None | `[] -> []` | Exits the current block scope by popping it from the scope stack. |
 | **24** | `0x18` | `POP` | None | `[value] -> []` | Pops the top value off the evaluation stack. |
 | **25** | `0x19` | `DEFINE_CONST` | 1: `nameIdx` | `[value] -> []` | Pops a value and defines it as a constant in the Symbol Table. |
+| **26** | `0x1A` | `JUMP_IF_TRUE` | 1: `target` | `[cond] -> []` | Pops `cond`. If `true`, jumps to `target`. |
+| **27** | `0x1B` | `DUP` | None | `[value] -> [value, value]` | Duplicates the top value on the stack. |
+
 
 

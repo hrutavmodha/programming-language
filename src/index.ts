@@ -48,12 +48,20 @@ export function interprete(src: string): any {
 }
 
 interprete(`
-    let i = 0;
+    let x = 4;
 
-    do {
-        i = i + 1;
-        if i == 5 continue;
-        print i;
-    } while i < 10;
+    switch x { 
+        case 1 {
+            print "Hello!";
+        } case 2 {
+            print "World!";
+        } case 3 {
+            print "Bye!";
+        } case 4 {
+            print "How?";
+        } default {
+            print "Fuck!";
+        }
+    } 
 `)
 

@@ -142,6 +142,20 @@ export default class Executor {
                     this.state.increment()
                     const name = this.constantPool.get(this.state.peek())
                     this.scopeStack.storeConstant(name, this.state.pop())
+                    break
+                } case 26: {
+                    this.state.increment()
+                    const value = this.state.pop()
+
+                    if (value === true) {
+                        this.state.jump(this.state.peek())
+                        continue
+                    } else {
+                        break
+                    }
+                } case 27: {
+                    this.state.push(this.state.peekStack())
+                    break
                 }
             }
             this.state.increment()

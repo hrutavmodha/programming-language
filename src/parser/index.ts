@@ -40,6 +40,8 @@ export default class Parser {
                 return this.parseDoWhileStatement()
             } case 'KEYWORD_FOR': {
                 return this.parseForStatement()
+            } case 'KEYWORD_SWITCH': {
+                return this.parseSwitchStatement()
             } default: {
                 const node = this.parseExpression()
                 this.state.expect('SEMI_COLON')
@@ -295,6 +297,49 @@ export default class Parser {
             consequent: body,
             alternate
         }
+    }
+
+    private parseSwitchStatement(): any {
+        const node: any = {
+            type: 'SwitchStatement',
+            discriminant: null,
+            cases: []
+
+        }
+
+        this.state.expect('KEYWORD_SWITCH')
+
+        node.discriminant = this.parseExpression()
+
+        this.state.expect('OPENING_CURLY_BRACE')
+
+        while (this.state.peek().type === 'KEYWORD_CASE') {
+            this.state.increment()
+
+            const expr = this.parseExpression()
+            const body = this.parseStatement()
+
+            node.cases.push({
+                type: 'CaseClause',
+                test: expr,
+                consequent: body
+            })
+        }
+
+        if (this.state.peek().type === 'KEYWORD_DEFAULT') {
+            this.state.increment()
+            
+            const body = this.parseStatement() 
+
+            node.cases.push({
+                type: 'CaseClause',
+                test: null,
+                consequent: body
+            })
+        }
+
+        this.state.expect('CLOSING_CURLY_BRACE')
+        return node
     }
 
     private parseWhileStatement(): any {

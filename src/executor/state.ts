@@ -21,6 +21,10 @@ export default class ExecutorState {
         return this.stack.pop()
     }
 
+    peekStack(): any {
+        return this.stack[this.stack.length - 1] 
+    }
+
     advance(): number {
         return this.instructions[this.instructionPointer++]
     }

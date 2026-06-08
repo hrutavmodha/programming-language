@@ -63,6 +63,9 @@ export default class Generator {
             } case 'IfStatement': {
                 this.generateIfStatement(node)
                 break
+            } case 'SwitchStatement': {
+                this.generateSwitchStatement(node)
+                break
             } default: {
                 this.generateExpression(node)
             }
@@ -189,7 +192,7 @@ export default class Generator {
             continuePatchPoints: [],
             breakPatchPoints: []
         })
-        
+
         this.generateStatement(node.body)
         const conditionIdx = this.state.length()
         this.generateExpression(node.condition)
@@ -235,6 +238,42 @@ export default class Generator {
         } else {
             this.state.update(jmpIfFalseIdx, this.state.length())
         }
+    }
+
+    private generateSwitchStatement(node: Node) {
+        this.generateExpression(node.discriminant)
+
+        let patchIndexes: number[] = []
+        
+        for (let clause of node.cases) {
+            this.state.push(27) // Duplicate
+
+            if (clause.test !== null) {
+                this.generateExpression(clause.test)
+            }
+
+            this.state.push(20) // Equals
+
+            this.state.push(14) // Jump If False
+            const jmpIfFalseIdx = this.state.length()
+            this.state.push(-1)
+
+            this.state.push(24)
+
+            this.generateStatement(clause.consequent)
+
+            this.state.push(15) // Jump
+            patchIndexes.push(this.state.length())
+            this.state.push(-1)
+
+            this.state.update(jmpIfFalseIdx, this.state.length())
+        }
+
+        this.state.push(24)
+
+        patchIndexes.forEach((idx: number) => {
+            this.state.update(idx, this.state.length())
+        })
     }
 
     private generateConstantDeclaration(node: Node) {
