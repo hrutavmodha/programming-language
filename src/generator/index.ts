@@ -1,15 +1,18 @@
 import type { Node } from '../../types/nodes.d.ts'
 import GeneratorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
+import LoopContextStack from './loop-context.ts'
 import error from '../shared/error.ts'
 
 export default class Generator {
     private state: GeneratorState;
     private constantPool: ConstantPool;
+    private loopContextStack: LoopContextStack;
 
     constructor(state: GeneratorState) {
         this.state = state
         this.constantPool = new ConstantPool()
+        this.loopContextStack = new LoopContextStack()
     }
 
     generate() {
@@ -45,6 +48,18 @@ export default class Generator {
             } case 'WhileStatement': {
                 this.generateWhileStatement(node)
                 break
+            } case 'ForStatement': {
+                this.generateForStatement(node)
+                break
+            } case 'DoWhileStatement': {
+                this.generateDoWhileStatement(node)
+                break
+            } case 'BreakStatement': {
+                this.generateBreakStatement()
+                break
+            } case 'ContinueStatement': {
+                this.generateContinueStatement()
+                break
             } case 'IfStatement': {
                 this.generateIfStatement(node)
                 break
@@ -56,17 +71,35 @@ export default class Generator {
 
     private generateWhileStatement(node: Node) {
         const startIdx = this.state.length()
-
+        
         this.generateExpression(node.condition)
 
         this.state.push(14)
         const jmpIfFalseIdx = this.state.length()
         this.state.push(-1)
 
+        /* Push to stack before generating body so that if body contains BreakStatement or 
+        ContinueStatement, it can easily get context and append placeholders before
+        generating instructions for VM */
+        this.loopContextStack.push({
+            continuePatchPoints: [],
+            breakPatchPoints: []
+        })
+
         this.generateStatement(node.body)
 
         this.state.push(15)
         this.state.push(startIdx)
+
+        const loopContext = this.loopContextStack.peek()
+
+        loopContext.breakPatchPoints.forEach((breakPoint: number) => {
+            this.state.update(breakPoint, this.state.length())
+        })
+
+        loopContext.continuePatchPoints.forEach((continuePoint: number) => {
+            this.state.update(continuePoint, startIdx)
+        })
 
         this.state.update(jmpIfFalseIdx, this.state.length())
     } 
@@ -84,6 +117,98 @@ export default class Generator {
         this.state.push(23) // Exit Scope
     }
 
+    private generateBreakStatement() {
+        const context = this.loopContextStack.peek()
+        
+        if (!context) {
+            error(`Cannot break outside the loop`)
+        }
+
+        this.state.push(15) // Jump
+        const jmpIdx = this.state.length()
+        this.state.push(-1)
+
+        context.breakPatchPoints.push(jmpIdx)
+    }
+
+    private generateContinueStatement() {
+        const context = this.loopContextStack.peek()
+        
+        if (!context) {
+            error(`Cannot continue outside the loop`)
+        }
+
+        this.state.push(15) // Jump
+        const jmpIdx = this.state.length()
+        this.state.push(-1)
+
+        context.continuePatchPoints.push(jmpIdx)
+    }
+
+    private generateForStatement(node: Node) {
+        this.state.push(22) // Enter Scope
+
+        this.generateStatement(node.initializer)
+        const jmpIdx = this.state.length()
+        this.generateExpression(node.condition)
+        
+        this.state.push(14)
+        const jmpIfFalseIdx = this.state.length()
+        this.state.push(-1)
+        
+        this.loopContextStack.push({
+            continuePatchPoints: [],
+            breakPatchPoints: []
+        })
+        
+        this.generateStatement(node.body)
+
+        const continueIdx = this.state.length()
+        this.generateStatement(node.update)
+
+        this.state.push(15)
+        this.state.push(jmpIdx)
+        
+        this.state.update(jmpIfFalseIdx, this.state.length())
+
+        const loopContext = this.loopContextStack.peek()
+        loopContext.breakPatchPoints.forEach((breakPoint: number) => {
+            this.state.update(breakPoint, this.state.length())
+        })
+        loopContext.continuePatchPoints.forEach((continuePoint: number) => {
+            this.state.update(continuePoint, continueIdx)
+        })
+
+        this.state.push(23) // Exit Scope
+    } 
+
+    private generateDoWhileStatement(node: Node) {
+        const startIdx = this.state.length()
+        
+        this.loopContextStack.push({
+            continuePatchPoints: [],
+            breakPatchPoints: []
+        })
+        
+        this.generateStatement(node.body)
+        const conditionIdx = this.state.length()
+        this.generateExpression(node.condition)
+
+
+        this.state.push(9) // Not
+
+        this.state.push(14) // Jump If False
+        this.state.push(startIdx)
+
+        const loopContext = this.loopContextStack.peek()
+        loopContext.breakPatchPoints.forEach((breakPoint: number) => {
+            this.state.update(breakPoint, this.state.length())
+        })
+        loopContext.continuePatchPoints.forEach((continuePatch: number) => {
+            this.state.update(continuePatch, conditionIdx)
+        })
+    }
+
     private generateIfStatement(node: Node) {        
         this.generateExpression(node.condition)
         
@@ -94,8 +219,6 @@ export default class Generator {
         this.state.push(-1) // To patch it later
 
         this.generateStatement(node.consequent)
-
-        
 
         if (node.alternate) {
             this.state.push(15) // Jump

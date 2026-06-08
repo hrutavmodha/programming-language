@@ -48,6 +48,18 @@ export default class Lexer {
             } case 'print': { 
                 this.state.push('KEYWORD_PRINT', lexeme, null)
                 break
+            } case 'do': {
+                this.state.push('KEYWORD_DO', lexeme, null)
+                break
+            } case 'for': {
+                this.state.push('KEYWORD_FOR', lexeme, null)
+                break
+            } case 'switch': {
+                this.state.push('KEYWORD_SWITCH', lexeme, null)
+                break
+            } case 'case': {
+                this.state.push('KEYWORD_CASE', lexeme, null)
+                break
             } default: {
                 this.state.push('IDENTIFIER', lexeme, null)
             }

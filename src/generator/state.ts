@@ -48,4 +48,8 @@ export default class GeneratorState {
     getBytecode(): Uint8Array {
         return new Uint8Array(this.bytecode)
     }
+
+    getRawInstructions(): any {
+        return this.bytecode
+    }
 }

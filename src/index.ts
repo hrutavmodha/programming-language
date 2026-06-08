@@ -1,6 +1,7 @@
-import type { Symbol } from '../types/scope.ts'
-import Analyzer from './analyzer/index.ts'
-import AnalyzerState from './analyzer/state.ts'
+// import { writeFileSync } from 'fs'
+// import type { Symbol } from '../types/scope.ts'
+// import Analyzer from './analyzer/index.ts'
+// import AnalyzerState from './analyzer/state.ts'
 
 import Executor from './executor/index.ts'
 import ExecutorState from './executor/state.ts'
@@ -25,7 +26,7 @@ export function interprete(src: string): any {
     const parserState = new ParserState(tokens)
     const parser = new Parser(parserState)
     const ast = parser.parse()
-    console.log("AST:", JSON.stringify(ast, null, 2))
+    console.log("\nAST:", JSON.stringify(ast, null, 2))
 
     // const analyzerState = new AnalyzerState(ast)
     // const analyzer = new Analyzer(analyzerState)
@@ -35,17 +36,24 @@ export function interprete(src: string): any {
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    console.log("ByteCodes:", JSON.stringify(bytecodes, null, 2))
+    console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
+
+    // writeFileSync('compiled', bytecodes)
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
 
+    console.log("\nOutput:")
     executor.execute()
 }
 
 interprete(`
-    const a = 10;
-    a = a + 20;
-    print a;
+    let i = 0;
+
+    do {
+        i = i + 1;
+        if i == 5 continue;
+        print i;
+    } while i < 10;
 `)
 

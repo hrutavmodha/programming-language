@@ -7,6 +7,7 @@ import { ScopeStack } from '../shared/scope.ts'
 export default class Analyzer {
     private state: AnalyzerState;
     private symbolTable: ScopeStack;
+    private loopDepth: number = 0
 
     constructor(state: AnalyzerState) {
         this.state = state
@@ -38,6 +39,10 @@ export default class Analyzer {
                 return this.analyzeIfStatement(node)
             } case 'WhileStatement': {
                 return this.analyzeWhileStatement(node)
+            } case 'BreakStatement': {
+                return this.analyzeBreakStatement(node)
+            } case 'ContinueStatement': {
+                return this.analyzeContinueStatement(node)
             } default: {
                 return this.analyzeExpression(node)
             }
@@ -75,8 +80,32 @@ export default class Analyzer {
         return node
     }
 
-    private analyzeWhileStatement(node: Node) {
-        // TODO
+    private analyzeWhileStatement(node: Node) { 
+        this.loopDepth++
+
+        const condition = this.analyzeExpression(node.condition)
+        const consequent = this.analyzeStatement(node.body)
+
+        this.loopDepth--
+        return {
+            type: 'WhileStatement',
+            condition, body: consequent
+        }
+    }
+
+    private analyzeBreakStatement(node: Node) {
+        if (this.loopDepth === 0) {
+            error(`"break" outside loop is not allowed`)
+        }
+
+        return node
+    }
+
+    private analyzeContinueStatement(node: Node) {
+        if (this.loopDepth === 0) {
+            error(`"continue" outside loop is not allowed`)
+        }
+
         return node
     }
 

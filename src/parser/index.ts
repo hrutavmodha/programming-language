@@ -36,6 +36,10 @@ export default class Parser {
                 return this.parseBreakStatement()
             } case 'KEYWORD_CONTINUE': {
                 return this.parseContinueStatement()
+            } case 'KEYWORD_DO': {
+                return this.parseDoWhileStatement()
+            } case 'KEYWORD_FOR': {
+                return this.parseForStatement()
             } default: {
                 const node = this.parseExpression()
                 this.state.expect('SEMI_COLON')
@@ -318,5 +322,50 @@ export default class Parser {
         this.state.expect('SEMI_COLON')
 
         return { type: 'ContinueStatement' }
+    }
+
+    private parseDoWhileStatement(): any {
+        this.state.expect('KEYWORD_DO')
+
+        const body = this.parseStatement()
+
+        this.state.expect('KEYWORD_WHILE')
+
+        const condition = this.parseExpression()
+
+        this.state.expect('SEMI_COLON')
+
+        return {
+            type: 'DoWhileStatement',
+            body,
+            condition
+        }
+    }
+
+    private parseForStatement(): any {
+        this.state.expect('KEYWORD_FOR')
+
+        const peek = this.state.peek()
+        let initializer: any
+
+        if (peek.type === 'KEYWORD_LET') {
+            initializer = this.parseVariableDeclaration()
+        } else if (peek.type === 'KEYWORD_CONST') {
+            error(`Cannot declare constant iterator`)
+        } else {
+            initializer = this.parseAssignment()
+        }
+
+        const condition = this.parseExpression()
+
+        this.state.expect('SEMI_COLON')
+
+        const update = this.parseExpression()
+        const body = this.parseStatement()
+
+        return {
+            type: 'ForStatement',
+            initializer, condition, update, body
+        }
     }
 }
