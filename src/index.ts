@@ -1,5 +1,6 @@
 // import { writeFileSync } from 'fs'
 // import type { Symbol } from '../types/scope.ts'
+import { readFileSync } from 'fs'
 import Analyzer from './analyzer/index.ts'
 import AnalyzerState from './analyzer/state.ts'
 
@@ -57,8 +58,5 @@ export function interprete(src: string): any {
     executor.execute()
 }
 
-interprete(`
-    let x = 10 + 20;
-    print(x);
-`)
+interprete(readFileSync('./src/temp.txt').toString())
 
