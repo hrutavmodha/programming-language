@@ -1,5 +1,5 @@
 import type { Node } from '../../types/nodes.d.ts'
-import type { Symbol } from '../../types/scope.ts'
+import type { FunctionSymbol, Symbol } from '../../types/scope.ts'
 import error from '../shared/error.ts'
 import AnalyzerState from './state.ts'
 import { ScopeStack } from '../shared/scope.ts'
@@ -11,8 +11,7 @@ export default class Analyzer {
 
     constructor(state: AnalyzerState) {
         this.state = state
-        this.symbolTable = new ScopeStack()
-        this.symbolTable.push(new Map<string, Symbol>())
+        this.symbolTable = state.scopeStack
     }
 
     getSymbolTable() {
@@ -112,79 +111,9 @@ export default class Analyzer {
     private analyzeExpression(node: Node) {
         switch (node.type) {
             case 'ArithmeticExpression': {
-                let left = this.analyzeExpression(node.left)
-                let right = this.analyzeExpression(node.right)
-
-                switch (node.operator) {
-                    case '+': {
-                        if (left.type === 'NumberLiteral') {
-                            if (right.type !== 'NumberLiteral') {
-                                error(`Incompatible types for addition: ${left.type} and ${right.type}`)
-                            } return {
-                                type: 'NumberLiteral',
-                                value: left.value + right.value
-                            }
-                        } else if (left.type === 'StringLiteral') {
-                            if (right.type !== 'StringLiteral') {
-                                error(`Incompatible types for concatenation: ${left.type} and ${right.type}`)
-                            } return {
-                                type: 'StringLiteral',
-                                value: left.value + right.value
-                            }
-                        } else if (left.type === 'Identifier' || right.type === 'Identifier') {
-                            return {
-                                type: 'ArithmeticExpression',
-                                operator: node.operator,
-                                left, right
-                            }
-                        } else {
-                            error(`Incompatible type for operator "+": ${left.type}`)
-                        }
-                        break
-                    } case '-': {
-                        if (left.type === 'NumberLiteral') {
-                            if (right.type !== 'NumberLiteral') {
-                                error(`Incompatible types for addition: ${left.type} and ${right.type}`)
-                            } return {
-                                type: 'NumberLiteral',
-                                value: left.value - right.value
-                            }
-                        } else {
-                            error(`Incompatible type for operator "+": ${left.type}`)
-                        }
-                        break
-                    } case '*': {
-                        if (left.type === 'NumberLiteral') {
-                            if (right.type !== 'NumberLiteral') {
-                                error(`Incompatible types for addition: ${left.type} and ${right.type}`)
-                            } return {
-                                type: 'NumberLiteral',
-                                value: left.value * right.value
-                            }
-                        } else {
-                            error(`Incompatible type for operator "+": ${left.type}`)
-                        }
-                        break
-                    } case '/': {
-                        if (left.type === 'NumberLiteral') {
-                            if (right.type !== 'NumberLiteral') {
-                                error(`Incompatible types for addition: ${left.type} and ${right.type}`)
-                            } return {
-                                type: 'NumberLiteral',
-                                value: left.value / right.value
-                            }
-                        } else {
-                            error(`Incompatible type for operator "+": ${left.type}`)
-                        }
-                        break
-                    } default: {
-                        return {
-                            type: 'ArithmeticExpression',
-                            operator: node.operator,
-                            left, right
-                        }
-                    }
-                }
+                return this.analyzeArthmeticExpression(node)
+            } case 'CallExpression': {
+                return this.analyzeCallExpression(node)
             } case 'NumberLiteral': {
                 return {
                     type: 'NumberLiteral',
@@ -202,5 +131,100 @@ export default class Analyzer {
                 }
             }
         }
+    }
+
+    private analyzeArthmeticExpression(node: Node) {
+        let left = this.analyzeExpression(node.left)
+        let right = this.analyzeExpression(node.right)
+
+        switch (node.operator) {
+            case '+': {
+                if (left.type === 'NumberLiteral') {
+                    if (right.type !== 'NumberLiteral') {
+                        error(`Incompatible types for addition: ${left.type} and ${right.type}`)
+                    } return {
+                        type: 'NumberLiteral',
+                        value: left.value + right.value
+                    }
+                } else if (left.type === 'StringLiteral') {
+                    if (right.type !== 'StringLiteral') {
+                        error(`Incompatible types for concatenation: ${left.type} and ${right.type}`)
+                    } return {
+                        type: 'StringLiteral',
+                        value: left.value + right.value
+                    }
+                } else if (left.type === 'Identifier' || right.type === 'Identifier') {
+                    return {
+                        type: 'ArithmeticExpression',
+                        operator: node.operator,
+                        left, right
+                    }
+                } else {
+                    error(`Incompatible type for operator "+": ${left.type}`)
+                }
+                break
+            } case '-': {
+                if (left.type === 'NumberLiteral') {
+                    if (right.type !== 'NumberLiteral') {
+                        error(`Incompatible types for addition: ${left.type} and ${right.type}`)
+                    } return {
+                        type: 'NumberLiteral',
+                        value: left.value - right.value
+                    }
+                } else {
+                    error(`Incompatible type for operator "+": ${left.type}`)
+                }
+                break
+            } case '*': {
+                if (left.type === 'NumberLiteral') {
+                    if (right.type !== 'NumberLiteral') {
+                        error(`Incompatible types for addition: ${left.type} and ${right.type}`)
+                    } return {
+                        type: 'NumberLiteral',
+                        value: left.value * right.value
+                    }
+                } else {
+                    error(`Incompatible type for operator "+": ${left.type}`)
+                }
+                break
+            } case '/': {
+                if (left.type === 'NumberLiteral') {
+                    if (right.type !== 'NumberLiteral') {
+                        error(`Incompatible types for addition: ${left.type} and ${right.type}`)
+                    } return {
+                        type: 'NumberLiteral',
+                        value: left.value / right.value
+                    }
+                } else {
+                    error(`Incompatible type for operator "+": ${left.type}`)
+                }
+                break
+            } default: {
+                return {
+                    type: 'ArithmeticExpression',
+                    operator: node.operator,
+                    left, right
+                }
+            }
+        }
+    }
+
+    private analyzeCallExpression(node: Node) {
+        if (node.callee.type === 'Identifier') {
+            const symbol = this.symbolTable.get(node.callee.name) as FunctionSymbol
+
+            if (node?.arguments?.length !== symbol?.arity) {
+                error(`Expected ${symbol?.arity} parameters, but got ${node?.arguments?.length} instead`)
+            }
+
+            if (symbol?.type === 'function') {
+                node.arguments.map((args: any) => {
+                    this.analyzeExpression(args)
+                })
+            }
+        } else {
+            console.log(`Function name must be a valid identifier`)
+        }
+        return node
     }
 }

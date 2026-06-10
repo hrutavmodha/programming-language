@@ -21,6 +21,10 @@ export default class ExecutorState {
         return this.stack.pop()
     }
 
+    length(): number {
+        return this.stack.length
+    }
+
     peekStack(): any {
         return this.stack[this.stack.length - 1] 
     }

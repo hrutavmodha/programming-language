@@ -3,6 +3,7 @@ import GeneratorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
 import LoopContextStack from './loop-context.ts'
 import error from '../shared/error.ts'
+import { nativeFunctions } from '../shared/native-functions.ts'
 
 export default class Generator {
     private state: GeneratorState;
@@ -376,6 +377,19 @@ export default class Generator {
                 this.state.push(13)
                 this.state.push(varIdx)
                 this.state.push(24) // Pop
+                break
+            } case 'CallExpression': {
+                node.arguments.forEach((arg: any) => {
+                    this.generateExpression(arg)
+                })
+                if (node.callee?.name in nativeFunctions) {
+                    this.state.push(29) // Call Native
+                    const cpIdx = this.constantPool.store(node.callee?.name)
+                    this.state.push(cpIdx)
+                } else {
+                    this.state.push(30) // Call
+                }
+                this.state.push(node.arguments.length)
                 break
             } case 'NumberLiteral': {
                 const cpIdx = this.constantPool.store(Number(node.value))

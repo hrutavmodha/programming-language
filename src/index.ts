@@ -1,7 +1,7 @@
 // import { writeFileSync } from 'fs'
 // import type { Symbol } from '../types/scope.ts'
-// import Analyzer from './analyzer/index.ts'
-// import AnalyzerState from './analyzer/state.ts'
+import Analyzer from './analyzer/index.ts'
+import AnalyzerState from './analyzer/state.ts'
 
 import Executor from './executor/index.ts'
 import ExecutorState from './executor/state.ts'
@@ -21,47 +21,44 @@ export function interprete(src: string): any {
     const lexerUtils = new LexerUtils()
     const lexer = new Lexer(lexerState, lexerUtils)
     const tokens = lexer.tokenize()
-    console.log("Tokens:", JSON.stringify(tokens, null, 2))
+    // console.log("Tokens:", JSON.stringify(tokens, null, 2))
 
     const parserState = new ParserState(tokens)
     const parser = new Parser(parserState)
     const ast = parser.parse()
-    console.log("\nAST:", JSON.stringify(ast, null, 2))
+    // console.log("\nAST:", JSON.stringify(ast, null, 2))
 
-    // const analyzerState = new AnalyzerState(ast)
-    // const analyzer = new Analyzer(analyzerState)
-    // const analyzedAst = analyzer.analyze()
+    const analyzerState = new AnalyzerState(ast)
+    const analyzer = new Analyzer(analyzerState)
+
+    analyzerState.scopeStack.storeFunction('print', 1, 'void')
+    analyzerState.scopeStack.storeFunction('add', 2, 'number')
+
+    const analyzedAst = analyzer.analyze()
+    // console.log( JSON.stringify(
+    //         analyzerState.scopeStack.getScopeStack(),
+    //         (_: any, value: any) => (value instanceof Map ? Object.fromEntries(value) : value),
+    //         2
+    //     ))
     // console.log("Analyzed AST:", JSON.stringify(analyzedAst, null, 2))
+    // console.log(analyzerState.scopeStack)
 
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
+    // console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     // writeFileSync('compiled', bytecodes)
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
-
-    console.log("\nOutput:")
+    
+    // console.log("\nOutput:")
     executor.execute()
 }
 
 interprete(`
-    let x = 4;
-
-    switch x { 
-        case 1 {
-            print "Hello!";
-        } case 2 {
-            print "World!";
-        } case 3 {
-            print "Bye!";
-        } case 4 {
-            print "How?";
-        } default {
-            print "Fuck!";
-        }
-    } 
+    let x = 10 + 20;
+    print();
 `)
 

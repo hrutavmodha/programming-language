@@ -13,7 +13,6 @@ export interface ConstantSymbol extends BaseSymbol {
 
 export interface FunctionSymbol extends BaseSymbol {
     arity: number
-    parameters: Map<string, VariableSymbol>
     returnType: string
 }
 

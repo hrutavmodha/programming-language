@@ -2,6 +2,7 @@ import ExecutorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
 import { ScopeStack } from '../shared/scope.ts'
 import type { Symbol } from '../../types/scope.ts'
+import { nativeFunctions } from '../shared/native-functions.ts'
 
 export default class Executor {
     private state: ExecutorState;
@@ -17,7 +18,7 @@ export default class Executor {
     private logDataStructures() {
         console.log("Stack:", JSON.stringify(this.state.getStack(), null, 2))
         console.log("Symbol Table:", JSON.stringify(
-            this.scopeStack.scopeStack,
+            this.scopeStack,
             (_: any, value: any) => (value instanceof Map ? Object.fromEntries(value) : value),
             2
         ))
@@ -155,6 +156,25 @@ export default class Executor {
                     }
                 } case 27: {
                     this.state.push(this.state.peekStack())
+                    break
+                } case 28: {
+                    this.state.increment()
+                    const valueIdx = this.state.peek()
+                    const value = this.constantPool.get(valueIdx)
+                    this.state.push(value)
+                    break
+                } case 29: {
+                    this.state.increment()
+                    const fnIdx = this.state.peek()
+                    this.state.increment()
+                    const arity = this.state.peek()
+                    const args: Array<any> = []
+                    for (let i = 0; i < arity; i++) {
+                        args.unshift(this.state.pop())
+                    } 
+                    const fnName = this.constantPool.get(fnIdx)
+                    const res = nativeFunctions[fnName](...args)
+                    this.state.push(res)
                     break
                 }
             }

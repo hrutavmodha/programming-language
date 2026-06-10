@@ -45,9 +45,6 @@ export default class Lexer {
             } case 'continue': {
                 this.state.push('KEYWORD_CONTINUE', lexeme, null)
                 break
-            } case 'print': { 
-                this.state.push('KEYWORD_PRINT', lexeme, null)
-                break
             } case 'do': {
                 this.state.push('KEYWORD_DO', lexeme, null)
                 break

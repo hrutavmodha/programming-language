@@ -20,9 +20,7 @@ export default class Parser {
         const token = this.state.peek()
         
         switch (token.type) {
-            case 'KEYWORD_PRINT': {
-                return this.parsePrintStatement()
-            } case 'KEYWORD_LET': {
+            case 'KEYWORD_LET': {
                 return this.parseVariableDeclaration()
             } case 'KEYWORD_CONST': {
                 return this.parseConstantDeclaration()
@@ -57,7 +55,7 @@ export default class Parser {
     private parseAssignment(): any {
         let left = this.parseLogicalOr()
 
-        while (this.state.peek().type === 'EQUALS') {
+        while (this.state.peek()?.type === 'EQUALS') {
             const operator = this.state.advance().lexeme
             const right = this.parseAssignment()
 
@@ -177,7 +175,7 @@ export default class Parser {
             }
         }
 
-        return this.parsePrimary()
+        return this.parseCallExpression()
     }
 
     private parsePrimary(): any {
@@ -210,17 +208,35 @@ export default class Parser {
         }
     }
 
-    private parsePrintStatement() {
-        this.state.expect('KEYWORD_PRINT')
+    private parseCallExpression(): any {
+        let callee = this.parsePrimary()
 
-        const valueToPrint = this.parseExpression()
-        
-        this.state.expect('SEMI_COLON')
-        
-        return {
-            type: 'PrintStatement',
-            arguments: valueToPrint
+        while (true) {
+            if (this.state.peek()?.type === 'OPENING_PARENTHESIS') {
+                const args: Array<any> = []
+                this.state.increment()
+                
+                if (this.state.peek()?.type !== 'CLOSING_PARENTHESIS') {
+                    args.push(this.parseExpression())
+                    
+                    while (this.state.peek()?.type === 'COMMA') {
+                        this.state.expect('COMMA')
+                        args.push(this.parseExpression())
+                    }
+                }
+
+                this.state.expect('CLOSING_PARENTHESIS')
+
+                callee = {
+                    type: 'CallExpression',
+                    callee, arguments: args
+                }
+            } else {
+                break
+            }
         }
+
+        return callee
     }
 
     private parseVariableDeclaration(): any {
@@ -413,4 +429,5 @@ export default class Parser {
             initializer, condition, update, body
         }
     }
+
 }

@@ -1,11 +1,13 @@
 import type {
     ConstantSymbol,
+    FunctionSymbol,
     ScopeInterface,
     ScopeStackInterface,
     Symbol,
     VariableSymbol
 } from '../../types/scope.d.ts'
 import error from './error.ts'
+import { nativeFunctions } from './native-functions.ts'
 
 export class Scope {
     private symbols: ScopeInterface
@@ -41,7 +43,7 @@ export class Scope {
 }
 
 export class ScopeStack {
-    scopeStack: ScopeStackInterface
+    private scopeStack: ScopeStackInterface
 
     constructor() {
         this.scopeStack = []
@@ -55,6 +57,10 @@ export class ScopeStack {
         return this.scopeStack.pop()
     }
 
+    peek() {
+        return this.scopeStack[this.scopeStack.length - 1]
+    }
+
     get(name: string): any {
         const popped: ScopeInterface[] = []
         let value: any = undefined
@@ -62,16 +68,22 @@ export class ScopeStack {
 
         while (true) {
             const scope = this.pop()
+
             if (!scope) {
                 break
             }
             popped.push(scope)
+
             if (scope.has(name)) {
                 const symbol = scope.get(name)
-                if (symbol) {
+
+                if (symbol.type === 'variable' || symbol.type === 'constant') {
                     value = (symbol as VariableSymbol | ConstantSymbol).dataType
                     isFound = true
                     break
+                } else {
+                    isFound = true
+                    value = symbol
                 }
             }
         }
@@ -106,6 +118,20 @@ export class ScopeStack {
         }
         scope.set(name, symbol)
         this.push(scope)
+    }
+
+    storeFunction(name: string, arity: number, returnType: string): void {
+        const symbol: FunctionSymbol = {
+            type: 'function',
+            arity,
+            returnType
+        }
+
+        if (!this.scopeStack[0]) {
+            this.scopeStack[0] = new Map<string, Symbol>()
+        }
+
+        this.scopeStack[0].set(name, symbol)
     }
 
     storeVariable(name: string, value: any): void {
@@ -163,5 +189,9 @@ export class ScopeStack {
         if (!isFound) {
             error(`Undefined variable "${name}"`)
         }
+    }
+
+    getScopeStack() {
+        return this.scopeStack
     }
 }
