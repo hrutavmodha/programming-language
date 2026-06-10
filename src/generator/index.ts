@@ -383,11 +383,11 @@ export default class Generator {
                     this.generateExpression(arg)
                 })
                 if (node.callee?.name in nativeFunctions) {
-                    this.state.push(29) // Call Native
+                    this.state.push(28) // Call Native
                     const cpIdx = this.constantPool.store(node.callee?.name)
                     this.state.push(cpIdx)
                 } else {
-                    this.state.push(30) // Call
+                    this.state.push(29) // Call
                 }
                 this.state.push(node.arguments.length)
                 break

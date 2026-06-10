@@ -159,12 +159,6 @@ export default class Executor {
                     break
                 } case 28: {
                     this.state.increment()
-                    const valueIdx = this.state.peek()
-                    const value = this.constantPool.get(valueIdx)
-                    this.state.push(value)
-                    break
-                } case 29: {
-                    this.state.increment()
                     const fnIdx = this.state.peek()
                     this.state.increment()
                     const arity = this.state.peek()

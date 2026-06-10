@@ -59,6 +59,6 @@ export function interprete(src: string): any {
 
 interprete(`
     let x = 10 + 20;
-    print();
+    print(x);
 `)
 

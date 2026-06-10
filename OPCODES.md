@@ -31,6 +31,5 @@ This document defines the current instruction set for the virtual machine. Each 
 | **25** | `0x19` | `DEFINE_CONST` | 1: `nameIdx` | `[value] -> []` | Pops a value and defines it as a constant in the Symbol Table. |
 | **26** | `0x1A` | `JUMP_IF_TRUE` | 1: `target` | `[cond] -> []` | Pops `cond`. If `true`, jumps to `target`. |
 | **27** | `0x1B` | `DUP` | None | `[value] -> [value, value]` | Duplicates the top value on the stack. |
-
-
-
+| **28** | `0x1C` | `CALL_NATIVE` | 1: `nameIdx`, 2: `arity` | `[arg1, ..., argN] -> [result]` | Pops `arity` arguments, retrieves native function name at `nameIdx` from Constant Pool, executes the native function, and pushes the result. |
+| **29** | `0x1D` | `CALL` | 1: `arity` | `[arg1, ..., argN] -> [result]` | Calls a user-defined function with `arity` arguments. (Note: Only code generation is implemented; executor execution is pending). |
