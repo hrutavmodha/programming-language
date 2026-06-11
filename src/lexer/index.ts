@@ -60,6 +60,12 @@ export default class Lexer {
             } case 'default': {
                 this.state.push('KEYWORD_DEFAULT', lexeme, null)
                 break
+            } case 'function': {
+                this.state.push('KEYWORD_FUNCTION', lexeme, null)
+                break
+            } case 'return': {
+                this.state.push('KEYWORD_RETURN', lexeme, null)
+                break
             } default: {
                 this.state.push('IDENTIFIER', lexeme, null)
             }

@@ -7,7 +7,8 @@ import { ScopeStack } from '../shared/scope.ts'
 export default class Analyzer {
     private state: AnalyzerState;
     private symbolTable: ScopeStack;
-    private loopDepth: number = 0
+    private loopDepth: number = 0;
+    private functionDepth: number = 0;
 
     constructor(state: AnalyzerState) {
         this.state = state
@@ -29,9 +30,7 @@ export default class Analyzer {
 
     private analyzeStatement(node: Node): any {
         switch (node.type) {
-            case 'PrintStatement': {
-                return this.analyzePrintStatement(node)
-            } case 'VariableDeclaration':
+            case 'VariableDeclaration':
             case 'ConstantDeclaration': {
                 return this.analyzeVariableDeclaration(node)
             } case 'IfStatement': {
@@ -42,16 +41,13 @@ export default class Analyzer {
                 return this.analyzeBreakStatement(node)
             } case 'ContinueStatement': {
                 return this.analyzeContinueStatement(node)
+            } case 'FunctionDeclaration': {
+                return this.analyzeFunctionDeclaration(node)
+            } case 'ReturnStatement': {
+                return this.analyzeReturnStatement(node)
             } default: {
                 return this.analyzeExpression(node)
             }
-        }
-    }
-
-    private analyzePrintStatement(node: Node) {
-        return {
-            type: 'PrintStatement',
-            arguments: this.analyzeExpression(node.arguments)
         }
     }
 
@@ -226,5 +222,34 @@ export default class Analyzer {
             console.log(`Function name must be a valid identifier`)
         }
         return node
+    }
+
+    private analyzeFunctionDeclaration(node: Node) {
+        this.symbolTable.storeUserDefinedFunction(node?.name?.name, node?.arguments?.length, 'any', 0)
+
+        let counter = 0
+        const bodyNodes = []
+        
+        this.functionDepth++
+
+        while (node.body[counter]) {
+            bodyNodes.push(this.analyzeStatement(node.body[counter]))
+            counter++
+        }
+
+        this.functionDepth--
+
+        return node
+    }
+
+    private analyzeReturnStatement(node: Node) {
+        if (this.functionDepth === 0) {
+            error(`Return statement outside functions is not allowed`)
+        }
+
+        return {
+            type: 'ReturnStatement',
+            expression: this.analyzeExpression(node.expression)
+        }
     }
 }

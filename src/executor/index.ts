@@ -3,16 +3,19 @@ import ConstantPool from '../shared/constant-pool.ts'
 import { ScopeStack } from '../shared/scope.ts'
 import type { Symbol } from '../../types/scope.ts'
 import { nativeFunctions } from '../shared/native-functions.ts'
+import error from '../shared/error.ts'
 
 export default class Executor {
     private state: ExecutorState;
     private constantPool: ConstantPool;
     private scopeStack: ScopeStack;
+    private callStack: Array<number>;
 
     constructor(state: ExecutorState, constantPool: ConstantPool) {
         this.state = state
         this.constantPool = constantPool
         this.scopeStack = new ScopeStack()
+        this.callStack = []
     }
 
     private logDataStructures() {
@@ -160,20 +163,55 @@ export default class Executor {
                 } case 28: {
                     this.state.increment()
                     const fnIdx = this.state.peek()
+
                     this.state.increment()
                     const arity = this.state.peek()
+
                     const args: Array<any> = []
                     for (let i = 0; i < arity; i++) {
                         args.unshift(this.state.pop())
-                    } 
+                    }
+                    
                     const fnName = this.constantPool.get(fnIdx)
                     const res = nativeFunctions[fnName](...args)
+                    
                     this.state.push(res)
                     break
+                } case 29: {
+                    this.state.increment()
+                    const fnIdx = this.state.peek()
+
+                    this.state.increment()
+                    const arity = this.state.peek()
+                    
+                    const fnName = this.constantPool.get(fnIdx)
+                    const fnObj = this.scopeStack.get(fnName)
+
+                    if (fnObj.arity !== arity) {
+                        error(`Expected ${fnObj.arity} arguments, but got ${arity}`)
+                    }
+
+                    this.callStack.push(this.state.getCurrentInstructionPointer())
+                    this.state.jump(fnObj.entryPoint)
+                    continue
+                } case 30: {
+                    this.state.increment()
+                    const fnNameIdx = this.state.peek()
+
+                    const fnName = this.constantPool.get(fnNameIdx)
+                    this.state.increment()
+                    this.scopeStack.storeUserDefinedFunction(fnName, this.state.peek(), 'any', this.state.getCurrentInstructionPointer() + 3)
+                    this.logDataStructures()
+                    break
+                } case 31: {
+                    const returnAddress = this.callStack.pop()
+                    this.state.jump(returnAddress)
+                    break
+                } default: {
+                    console.log(`Stuck at: ${this.state.getCurrentInstructionPointer()}: ${this.state.peek()}`)
                 }
             }
             this.state.increment()
-            // this.logDataStructures()
         }
     }
 }

@@ -25,6 +25,10 @@ export default class ExecutorState {
         return this.stack.length
     }
 
+    getCurrentInstructionPointer(): number {
+        return this.instructionPointer
+    }
+
     peekStack(): any {
         return this.stack[this.stack.length - 1] 
     }

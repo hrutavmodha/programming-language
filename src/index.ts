@@ -32,31 +32,37 @@ export function interprete(src: string): any {
     const analyzerState = new AnalyzerState(ast)
     const analyzer = new Analyzer(analyzerState)
 
-    analyzerState.scopeStack.storeFunction('print', 1, 'void')
-    analyzerState.scopeStack.storeFunction('add', 2, 'number')
+    analyzerState.scopeStack.storeNativeFunction('print', 1, 'void', -1)
+    analyzerState.scopeStack.storeNativeFunction('add', 2, 'number', -1)
 
     const analyzedAst = analyzer.analyze()
-    // console.log( JSON.stringify(
-    //         analyzerState.scopeStack.getScopeStack(),
-    //         (_: any, value: any) => (value instanceof Map ? Object.fromEntries(value) : value),
-    //         2
-    //     ))
+    console.log(JSON.stringify(
+            analyzerState.scopeStack.getScopeStack(),
+            (_: any, value: any) => (value instanceof Map ? Object.fromEntries(value) : value),
+            2
+        ))
     // console.log("Analyzed AST:", JSON.stringify(analyzedAst, null, 2))
-    // console.log(analyzerState.scopeStack)
 
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    // console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
+    console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     // writeFileSync('compiled', bytecodes)
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
     
-    // console.log("\nOutput:")
+    console.log("\nOutput:")
     executor.execute()
 }
 
-interprete(readFileSync('./src/temp.txt').toString())
+interprete(`
+    function subtract(a, b) { 
+        return a - b;
+    }
+
+    const c = subtract(10, 2);
+    print(c);
+`)
 

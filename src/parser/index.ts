@@ -40,6 +40,10 @@ export default class Parser {
                 return this.parseForStatement()
             } case 'KEYWORD_SWITCH': {
                 return this.parseSwitchStatement()
+            } case 'KEYWORD_FUNCTION': {
+                return this.parseFunctionDeclaration()
+            } case 'KEYWORD_RETURN': {
+                return this.parseReturnStatement()
             } default: {
                 const node = this.parseExpression()
                 this.state.expect('SEMI_COLON')
@@ -286,7 +290,11 @@ export default class Parser {
         this.state.expect('OPENING_CURLY_BRACE')
 
         while (!this.state.isAtEnd() && this.state.peek()?.type !== 'CLOSING_CURLY_BRACE') {
-            node.body.push(this.parseStatement())
+            const stmt = this.parseStatement()
+
+            if (stmt) {
+                node.body.push(stmt)
+            }
         }
 
         this.state.expect('CLOSING_CURLY_BRACE')
@@ -430,4 +438,54 @@ export default class Parser {
         }
     }
 
+    private parseFunctionDeclaration(): any {
+        this.state.expect('KEYWORD_FUNCTION')
+
+        const name = {
+            type: 'Identifier',
+            name: this.state.peek().lexeme
+        }
+        const args: Array<any> = []
+
+        this.state.expect('IDENTIFIER')
+        this.state.expect('OPENING_PARENTHESIS')
+        
+
+        while (this.state.peek().type !== 'CLOSING_PARENTHESIS') {
+            this.state.expect('IDENTIFIER')
+
+            args.push({
+                type: 'Identifier',
+                name: this.state.peek(-1).lexeme
+            })
+
+            if (this.state.peek().type === 'COMMA') {
+                this.state.increment()
+            } else {
+                break
+            }
+        }
+
+        this.state.expect('CLOSING_PARENTHESIS')
+
+        const body = this.parseBlockStatement()
+
+        return {
+            type: 'FunctionDeclaration',
+            name,
+            arguments: args,
+            body
+        }
+    }
+
+    private parseReturnStatement(): any {
+        this.state.expect('KEYWORD_RETURN')
+
+        const expression = this.parseExpression()
+
+        return {
+            type: 'ReturnStatement',
+            expression
+        }
+    }
 }

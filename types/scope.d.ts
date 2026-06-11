@@ -13,7 +13,8 @@ export interface ConstantSymbol extends BaseSymbol {
 
 export interface FunctionSymbol extends BaseSymbol {
     arity: number
-    returnType: string
+    returnType: string,
+    entryPoint: number
 }
 
 export interface ClassSymbol extends BaseSymbol {

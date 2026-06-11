@@ -82,8 +82,8 @@ export class ScopeStack {
                     isFound = true
                     break
                 } else {
-                    isFound = true
                     value = symbol
+                    isFound = true
                 }
             }
         }
@@ -120,11 +120,12 @@ export class ScopeStack {
         this.push(scope)
     }
 
-    storeFunction(name: string, arity: number, returnType: string): void {
+    storeNativeFunction(name: string, arity: number, returnType: string, entryPoint: number): void {
         const symbol: FunctionSymbol = {
             type: 'function',
             arity,
-            returnType
+            returnType,
+            entryPoint
         }
 
         if (!this.scopeStack[0]) {
@@ -134,8 +135,32 @@ export class ScopeStack {
         this.scopeStack[0].set(name, symbol)
     }
 
+    storeUserDefinedFunction(name: string, arity: number, returnType: string, entryPoint: number): void {
+        const scope = this.pop()
+
+        if (!scope) {
+            error('No active scope found')
+        }
+
+        if (scope.has(name)) {
+            error(`Function "${name}" is already registered`)
+        }
+
+        const symbol: FunctionSymbol = {
+            type: 'function',
+            arity,
+            returnType,
+            entryPoint
+        }
+
+        scope.set(name, symbol)
+
+        this.scopeStack.push(scope)
+    }
+
     storeVariable(name: string, value: any): void {
         const scope = this.pop()
+        
         if (!scope) {
             error("No active scope")
         }

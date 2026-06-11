@@ -34,10 +34,7 @@ export default class Generator {
 
     private generateStatement(node: Node) {
         switch (node?.type) {
-            case 'PrintStatement': {
-                this.generatePrintStatement(node)
-                break
-            } case 'VariableDeclaration': {
+            case 'VariableDeclaration': {
                 this.generateVariableDeclaration(node)
                 break
             } case 'ConstantDeclaration': {
@@ -67,11 +64,50 @@ export default class Generator {
             } case 'SwitchStatement': {
                 this.generateSwitchStatement(node)
                 break
+            } case 'FunctionDeclaration': {
+                this.generateFunctionDeclaration(node)
+                break
+            } case 'ReturnStatement': {
+                this.generateReturnStatement(node)
+                break
             } default: {
                 this.generateExpression(node)
             }
         }
     } 
+
+    private generateReturnStatement(node: Node) {
+        this.generateExpression(node.expression)
+        this.state.push(31) // Return
+    }
+
+    private generateFunctionDeclaration(node: Node) {
+        this.state.push(30)
+        const cpIdx = this.constantPool.store(node.name.name)
+        this.state.push(cpIdx)
+
+        this.state.push(node.arguments.length)
+
+        this.state.push(15)
+        const jmpIdx = this.state.length()
+        this.state.push(-1)
+
+        this.state.push(22)
+
+        node.arguments.slice().reverse().forEach((arg: any) => {
+            this.state.push(11)
+            const nameIdx = this.constantPool.store(arg?.name)
+            this.state.push(nameIdx)
+        })
+
+        node.body.body.forEach((stmt: Node) => {
+            this.generateStatement(stmt)
+        })
+
+        this.state.push(23)
+
+        this.state.update(jmpIdx, this.state.length())
+    }
 
     private generateWhileStatement(node: Node) {
         const startIdx = this.state.length()
@@ -299,11 +335,6 @@ export default class Generator {
         this.state.push(nameIdx)
     }
 
-    private generatePrintStatement(node: Node) {
-        this.generateExpression(node.arguments)
-        this.state.push(7)
-    }
-
     private generateExpression(node: Node) {
         switch (node?.type) {
             case 'ArithmeticExpression': {
@@ -385,12 +416,12 @@ export default class Generator {
 
                 if (node.callee?.name in nativeFunctions) {
                     this.state.push(28) // Call Native
-                    const cpIdx = this.constantPool.store(node.callee?.name)
-                    this.state.push(cpIdx)
                 } else {
                     this.state.push(29) // Call
                 }
 
+                const cpIdx = this.constantPool.store(node.callee?.name)
+                this.state.push(cpIdx)
                 this.state.push(node.arguments.length)
                 break
             } case 'NumberLiteral': {
