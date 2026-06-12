@@ -24,7 +24,7 @@ export function interprete(src: string): any {
     const parserState = new ParserState(tokens)
     const parser = new Parser(parserState)
     const ast = parser.parse()
-    // console.log("\nAST:", JSON.stringify(ast, null, 2))
+    console.log("\nAST:", JSON.stringify(ast, null, 2))
 
     const analyzerState = new AnalyzerState(ast)
     const analyzer = new Analyzer(analyzerState)
@@ -53,6 +53,13 @@ export function interprete(src: string): any {
 }
 
 interprete(`
-    const userInput = input("Enter a number: ");
-    print("You entered: " + userInput);
+    function factorial(n) {
+        if n == 0 | n == 1 {
+            return n;
+        } else {
+            return n * factorial(n - 1);
+        }
+    }
+
+    print(factorial(5)); # Should print 120
 `)

@@ -76,6 +76,7 @@ export default class Generator {
                 break
             } default: {
                 this.generateExpression(node)
+                this.state.push(23)
             }
         }
     } 
@@ -389,6 +390,7 @@ export default class Generator {
                         break
                     }
                 }
+                break
             } case 'LogicalExpression': {
                 this.generateExpression(node.left)
                 this.generateExpression(node.right)
@@ -402,6 +404,7 @@ export default class Generator {
                         break
                     }
                 }
+                break
             }  case 'UnaryExpression': {
                 this.generateExpression(node.operand)
 

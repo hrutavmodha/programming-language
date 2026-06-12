@@ -483,6 +483,8 @@ export default class Parser {
 
         const expression = this.parseExpression()
 
+        this.state.expect('SEMI_COLON')
+
         return {
             type: 'ReturnStatement',
             expression
