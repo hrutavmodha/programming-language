@@ -23,4 +23,8 @@ export default class LexerUtils {
     isQuote(char: string): boolean {
         return char === '"' || char === "'"
     }
+
+    isSingleLineComment(char: string): boolean {
+        return char === '#'
+    }
 }

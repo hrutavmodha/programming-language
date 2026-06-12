@@ -226,6 +226,27 @@ export default class Lexer {
                 continue
             }
 
+            // Single-line Comments
+            else if (this.utils.isSingleLineComment(this.state.peek())) {
+                while (this.state.peek() !== '\n') {
+                    this.state.increment()
+                }
+
+                this.state.increment()
+                continue
+            }
+            
+            // Multi-line Comments
+            else if (this.state.peek() === '/' && this.state.peek(1) === '*') {
+                while (this.state.peek() !== '*' && this.state.peek(1) !== '/') {
+                    this.state.increment()
+                }
+
+                this.state.increment()
+                this.state.increment()
+                continue
+            }
+
             // Keywords and Identifiers
             else if (this.utils.isAlphabet(this.state.peek())) {
                 this.tokenizeWord()
@@ -249,7 +270,6 @@ export default class Lexer {
                 this.tokenizeOperator()
             }
 
-            
             this.state.increment()
         }
         this.state.push('EndOfFile', '', null)

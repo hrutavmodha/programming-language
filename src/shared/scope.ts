@@ -78,10 +78,10 @@ export class ScopeStack {
                 const symbol = scope.get(name)
 
                 if (symbol.type === 'variable' || symbol.type === 'constant') {
-                    value = (symbol as VariableSymbol | ConstantSymbol).dataType
+                    value = (symbol as VariableSymbol | ConstantSymbol).value
                     isFound = true
                     break
-                } else {
+                } else if (symbol.type === 'function') {
                     value = symbol
                     isFound = true
                 }
@@ -114,7 +114,8 @@ export class ScopeStack {
 
         const symbol: Symbol = {
             type: 'constant',
-            dataType: value
+            dataType: value !== null && value !== undefined ? typeof value : 'any',
+            value: value
         }
         scope.set(name, symbol)
         this.push(scope)
@@ -170,7 +171,8 @@ export class ScopeStack {
         }
         const symbol: Symbol = {
             type: 'variable',
-            dataType: value
+            dataType: value !== null && value !== undefined ? typeof value : 'any',
+            value: value
         }
         scope.set(name, symbol)
         this.push(scope)
@@ -195,7 +197,9 @@ export class ScopeStack {
                 isFound = true
 
                 if (symbol.type === 'variable') {
-                    (symbol as VariableSymbol).dataType = value
+                    const varSymbol = symbol as VariableSymbol
+                    varSymbol.value = value
+                    varSymbol.dataType = value !== null && value !== undefined ? typeof value : 'any'
                     break
                 } else if (symbol.type === 'constant') {
                     error(`Cannot re-assign the constant`)

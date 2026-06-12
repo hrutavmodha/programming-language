@@ -13,6 +13,10 @@ export default class ExecutorState {
         return this.instructions[this.instructionPointer + offset]
     }
 
+    getInstructions() {
+        return this.instructions
+    }
+
     push(element: any) {
         this.stack.push(element)
     }

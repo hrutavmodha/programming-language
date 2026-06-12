@@ -60,10 +60,22 @@ export default class Analyzer {
         if (currentScope.has(node.name)) {
             error(`Variable "${node.name}" is already declared`)
         }
-        const dataType = (value.type === 'NumberLiteral' || value.type === 'StringLiteral') ? value.value : null
+        const symbolType = node.type === 'ConstantDeclaration' ? 'constant' : 'variable'
+        let dataType: string | null = 'any'
+        let initialValue: any = undefined
+
+        if (value.type === 'NumberLiteral') {
+            dataType = 'number'
+            initialValue = value.value
+        } else if (value.type === 'StringLiteral') {
+            dataType = 'string'
+            initialValue = value.value
+        }
+
         const symbol: Symbol = {
-            type: 'variable',
-            dataType
+            type: symbolType,
+            dataType,
+            value: initialValue
         }
         currentScope.set(node.name, symbol)
         this.symbolTable.push(currentScope)
@@ -219,7 +231,7 @@ export default class Analyzer {
                 })
             }
         } else {
-            console.log(`Function name must be a valid identifier`)
+            error(`Function name must be a valid identifier`)
         }
         return node
     }

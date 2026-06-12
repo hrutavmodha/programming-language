@@ -1,4 +1,4 @@
-// import { writeFileSync } from 'fs'
+import { writeFileSync } from 'fs'
 // import type { Symbol } from '../types/scope.ts'
 import { readFileSync } from 'fs'
 import Analyzer from './analyzer/index.ts'
@@ -36,11 +36,11 @@ export function interprete(src: string): any {
     analyzerState.scopeStack.storeNativeFunction('add', 2, 'number', -1)
 
     const analyzedAst = analyzer.analyze()
-    console.log(JSON.stringify(
-            analyzerState.scopeStack.getScopeStack(),
-            (_: any, value: any) => (value instanceof Map ? Object.fromEntries(value) : value),
-            2
-        ))
+    // console.log(JSON.stringify(
+    //         analyzerState.scopeStack.getScopeStack(),
+    //         (_: any, value: any) => (value instanceof Map ? Object.fromEntries(value) : value),
+    //         2
+    //     ))
     // console.log("Analyzed AST:", JSON.stringify(analyzedAst, null, 2))
 
     const generatorState = new GeneratorState(ast)
@@ -48,7 +48,7 @@ export function interprete(src: string): any {
     const bytecodes = generator.generate()
     console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
-    // writeFileSync('compiled', bytecodes)
+    writeFileSync('compiled', bytecodes)
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
@@ -58,11 +58,12 @@ export function interprete(src: string): any {
 }
 
 interprete(`
+    # Function to subtract 2 values
     function subtract(a, b) { 
         return a - b;
     }
 
-    const c = subtract(10, 2);
-    print(c);
+    const a = subtract(10, 2);
+    print(subtract);
 `)
 

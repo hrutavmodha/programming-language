@@ -17,13 +17,17 @@ export default class Generator {
     }
 
     generate() {
-        this.state.push(22)
+        // Custom Magic Number "HM"
+        this.state.push(77)
+        this.state.push(72)
+
+        this.state.push(21)
 
         while (!this.state.isAtEnd()) {
             this.generateStatement(this.state.peek())
             this.state.increment()
         }
-        this.state.push(23)
+        this.state.push(22)
 
         return this.state.getBytecode()
     }
@@ -78,24 +82,24 @@ export default class Generator {
 
     private generateReturnStatement(node: Node) {
         this.generateExpression(node.expression)
-        this.state.push(31) // Return
+        this.state.push(30) // Return
     }
 
     private generateFunctionDeclaration(node: Node) {
-        this.state.push(30)
+        this.state.push(29)
         const cpIdx = this.constantPool.store(node.name.name)
         this.state.push(cpIdx)
 
         this.state.push(node.arguments.length)
 
-        this.state.push(15)
+        this.state.push(14)
         const jmpIdx = this.state.length()
         this.state.push(-1)
 
-        this.state.push(22)
+        this.state.push(21)
 
         node.arguments.slice().reverse().forEach((arg: any) => {
-            this.state.push(11)
+            this.state.push(10)
             const nameIdx = this.constantPool.store(arg?.name)
             this.state.push(nameIdx)
         })
@@ -104,7 +108,7 @@ export default class Generator {
             this.generateStatement(stmt)
         })
 
-        this.state.push(23)
+        this.state.push(22)
 
         this.state.update(jmpIdx, this.state.length())
     }
@@ -114,7 +118,7 @@ export default class Generator {
         
         this.generateExpression(node.condition)
 
-        this.state.push(14)
+        this.state.push(13)
         const jmpIfFalseIdx = this.state.length()
         this.state.push(-1)
 
@@ -128,7 +132,7 @@ export default class Generator {
 
         this.generateStatement(node.body)
 
-        this.state.push(15)
+        this.state.push(14)
         this.state.push(startIdx)
 
         const loopContext = this.loopContextStack.peek()
@@ -147,14 +151,14 @@ export default class Generator {
     private generateBlockStatement(node: Node) {
         let cursor: number = 0
 
-        this.state.push(22) // Enter Scope
+        this.state.push(21) // Enter Scope
 
         while (node.body[cursor]) {
             this.generateStatement(node.body[cursor])
             cursor++
         }
 
-        this.state.push(23) // Exit Scope
+        this.state.push(22) // Exit Scope
     }
 
     private generateBreakStatement() {
@@ -164,7 +168,7 @@ export default class Generator {
             error(`Cannot break outside the loop`)
         }
 
-        this.state.push(15) // Jump
+        this.state.push(14) // Jump
         const jmpIdx = this.state.length()
         this.state.push(-1)
 
@@ -178,7 +182,7 @@ export default class Generator {
             error(`Cannot continue outside the loop`)
         }
 
-        this.state.push(15) // Jump
+        this.state.push(14) // Jump
         const jmpIdx = this.state.length()
         this.state.push(-1)
 
@@ -186,13 +190,13 @@ export default class Generator {
     }
 
     private generateForStatement(node: Node) {
-        this.state.push(22) // Enter Scope
+        this.state.push(21) // Enter Scope
 
         this.generateStatement(node.initializer)
         const jmpIdx = this.state.length()
         this.generateExpression(node.condition)
         
-        this.state.push(14)
+        this.state.push(13)
         const jmpIfFalseIdx = this.state.length()
         this.state.push(-1)
         
@@ -219,7 +223,7 @@ export default class Generator {
             this.state.update(continuePoint, continueIdx)
         })
 
-        this.state.push(23) // Exit Scope
+        this.state.push(22) // Exit Scope
     } 
 
     private generateDoWhileStatement(node: Node) {
@@ -235,9 +239,9 @@ export default class Generator {
         this.generateExpression(node.condition)
 
 
-        this.state.push(9) // Not
+        this.state.push(8) // Not
 
-        this.state.push(14) // Jump If False
+        this.state.push(13) // Jump If False
         this.state.push(startIdx)
 
         const loopContext = this.loopContextStack.peek()
@@ -252,7 +256,7 @@ export default class Generator {
     private generateIfStatement(node: Node) {        
         this.generateExpression(node.condition)
         
-        this.state.push(14) // JumpIfFalse
+        this.state.push(13) // JumpIfFalse
         
         // Store current length for future use of indexing
         const jmpIfFalseIdx = this.state.length()
@@ -261,7 +265,7 @@ export default class Generator {
         this.generateStatement(node.consequent)
 
         if (node.alternate) {
-            this.state.push(15) // Jump
+            this.state.push(14) // Jump
             const jmpIdx = this.state.length()
             this.state.push(-1)
 
@@ -283,30 +287,30 @@ export default class Generator {
         let patchIndexes: number[] = []
         
         for (let clause of node.cases) {
-            this.state.push(27) // Duplicate
+            this.state.push(26) // Duplicate
 
             if (clause.test !== null) {
                 this.generateExpression(clause.test)
             }
 
-            this.state.push(20) // Equals
+            this.state.push(19) // Equals
 
-            this.state.push(14) // Jump If False
+            this.state.push(13) // Jump If False
             const jmpIfFalseIdx = this.state.length()
             this.state.push(-1)
 
-            this.state.push(24)
+            this.state.push(23)
 
             this.generateStatement(clause.consequent)
 
-            this.state.push(15) // Jump
+            this.state.push(14) // Jump
             patchIndexes.push(this.state.length())
             this.state.push(-1)
 
             this.state.update(jmpIfFalseIdx, this.state.length())
         }
 
-        this.state.push(24)
+        this.state.push(23)
 
         patchIndexes.forEach((idx: number) => {
             this.state.update(idx, this.state.length())
@@ -317,10 +321,10 @@ export default class Generator {
         if (node.value !== null) {
             this.generateExpression(node.value)
         } else {
-            this.state.push(10)
+            this.state.push(9)
         }
         const nameIdx = this.constantPool.store(node.name)
-        this.state.push(25)
+        this.state.push(24)
         this.state.push(nameIdx)
     }
 
@@ -328,10 +332,10 @@ export default class Generator {
         if (node.value !== null) {
             this.generateExpression(node.value)
         } else {
-            this.state.push(10)
+            this.state.push(9)
         }
         const nameIdx = this.constantPool.store(node.name)
-        this.state.push(11)
+        this.state.push(10)
         this.state.push(nameIdx)
     }
 
@@ -366,22 +370,35 @@ export default class Generator {
 
                 switch (node.operator) {
                     case '>': {
-                        this.state.push(16)
+                        this.state.push(15)
                         break
                     } case '<': {
-                        this.state.push(17)
+                        this.state.push(16)
                         break
                     } case '>=': {
-                        this.state.push(18)
+                        this.state.push(17)
                         break
                     } case '<=': {
-                        this.state.push(19)
+                        this.state.push(18)
                         break
                     } case '==': {
-                        this.state.push(20)
+                        this.state.push(19)
                         break
                     } case '!=': {
-                        this.state.push(21)
+                        this.state.push(20)
+                        break
+                    }
+                }
+            } case 'LogicalExpression': {
+                this.generateExpression(node.left)
+                this.generateExpression(node.right)
+
+                switch (node.operator) {
+                    case '&': {
+                        this.state.push(31)
+                        break
+                    } case '|': {
+                        this.state.push(32)
                         break
                     }
                 }
@@ -390,10 +407,10 @@ export default class Generator {
 
                 switch (node.operator) {
                     case '-': {
-                        this.state.push(8)
+                        this.state.push(7)
                         break
                     } case '!': {
-                        this.state.push(9)
+                        this.state.push(8)
                         break
                     }
                 } 
@@ -405,9 +422,9 @@ export default class Generator {
 
                 const varIdx = this.constantPool.store(node.left.name)
                 this.generateExpression(node.right)
-                this.state.push(13)
+                this.state.push(12)
                 this.state.push(varIdx)
-                this.state.push(24) // Pop
+                this.state.push(23) // Pop
                 break
             } case 'CallExpression': {
                 node.arguments.forEach((arg: any) => {
@@ -415,9 +432,9 @@ export default class Generator {
                 })
 
                 if (node.callee?.name in nativeFunctions) {
-                    this.state.push(28) // Call Native
+                    this.state.push(27) // Call Native
                 } else {
-                    this.state.push(29) // Call
+                    this.state.push(28) // Call
                 }
 
                 const cpIdx = this.constantPool.store(node.callee?.name)
@@ -447,7 +464,7 @@ export default class Generator {
                 break
             } case 'Identifier': {
                 const cpIdx = this.constantPool.store(node.name)
-                this.state.push(12)
+                this.state.push(11)
                 this.state.push(cpIdx)
                 break
             }

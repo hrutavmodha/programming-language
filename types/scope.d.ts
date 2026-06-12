@@ -3,11 +3,12 @@ export interface BaseSymbol {
 }
 
 export interface VariableSymbol extends BaseSymbol {
-    dataType: any
+    dataType: string | null
+    value?: any
 }
 
 export interface ConstantSymbol extends BaseSymbol {
-    dataType: any,
+    dataType: string | null
     value?: any
 }
 

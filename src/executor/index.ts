@@ -28,7 +28,18 @@ export default class Executor {
         console.log("Constant Pool:", JSON.stringify(this.constantPool.getPool(), null, 2))
     }
 
+    verify(instructions: Uint8Array) {
+        if (instructions[0] !== 77 || instructions[1] !== 72) {
+            error(`Cannot execute malicious bytecode payload`)
+        } else {
+            this.state.increment()
+            this.state.increment()
+        }
+    }
+
     execute() {
+        this.verify(this.state.getInstructions())
+
         while (!this.state.isAtEnd()) {
             switch (this.state.peek()) {
                 case 1: {
@@ -51,6 +62,10 @@ export default class Executor {
                     const b = this.state.pop()
                     this.state.push(b / a)
                     break
+                } case 5: {
+                    const a = this.state.pop()
+                    const b = this.state.pop()
+                    this.state.push(b % a)
                 } case 6: {
                     this.state.increment()
                     const valueIdx = this.state.peek()
@@ -58,30 +73,27 @@ export default class Executor {
                     this.state.push(value)
                     break
                 } case 7: {
-                    process.stdout.write(String(this.state.pop()) + '\n')
-                    break
-                } case 8: {
                     const value = this.state.pop()
                     this.state.push(-value)
                     break
-                } case 9: {
+                } case 8: {
                     const value = this.state.pop()
                     this.state.push(!value)
                     break
-                } case 10: {
+                } case 9: {
                     this.state.push(null)
                     break
-                } case 11: {
+                } case 10: {
                     this.state.increment()
                     const name = this.constantPool.get(this.state.peek())
                     this.scopeStack.storeVariable(name, this.state.pop())
                     break
-                } case 12: {
+                } case 11: {
                     this.state.increment()
                     const name = this.constantPool.get(this.state.peek())
                     this.state.push(this.scopeStack.get(name))
                     break
-                } case 13: {
+                } case 12: {
                     this.state.increment()
                     const value = this.state.pop()
                     const varIdx = this.state.peek()
@@ -89,7 +101,7 @@ export default class Executor {
                     this.scopeStack.updateVariable(variable, value)
                     this.state.push(value)
                     break
-                } case 14: {
+                } case 13: {
                     this.state.increment()
                     const value = this.state.pop()
 
@@ -99,55 +111,55 @@ export default class Executor {
                     } else {
                         break
                     }
-                } case 15: {
+                } case 14: {
                     this.state.increment()
                     this.state.jump(this.state.peek())
                     continue
-                } case 16: {
+                } case 15: {
                     const b = this.state.pop()
                     const a = this.state.pop()
                     this.state.push(a > b)
                     break
-                } case 17: {
+                } case 16: {
                     const b = this.state.pop()
                     const a = this.state.pop()
                     this.state.push(a < b)
                     break
-                } case 18: {
+                } case 17: {
                     const b = this.state.pop()
                     const a = this.state.pop()
                     this.state.push(a >= b)
                     break
-                } case 19: {
+                } case 18: {
                     const b = this.state.pop()
                     const a = this.state.pop()
                     this.state.push(a <= b)
                     break
-                } case 20: {
+                } case 19: {
                     const b = this.state.pop()
                     const a = this.state.pop()
                     this.state.push(a === b)
                     break
-                } case 21: {
+                } case 20: {
                     const b = this.state.pop()
                     const a = this.state.pop()
                     this.state.push(a !== b)
                     break
-                } case 22: {
+                } case 21: {
                     this.scopeStack.push(new Map<string, Symbol>())
                     break
-                } case 23: {
+                } case 22: {
                     this.scopeStack.pop()
                     break
-                } case 24: {
+                } case 23: {
                     this.state.pop()
                     break
-                } case 25: {
+                } case 24: {
                     this.state.increment()
                     const name = this.constantPool.get(this.state.peek())
                     this.scopeStack.storeConstant(name, this.state.pop())
                     break
-                } case 26: {
+                } case 25: {
                     this.state.increment()
                     const value = this.state.pop()
 
@@ -157,10 +169,10 @@ export default class Executor {
                     } else {
                         break
                     }
-                } case 27: {
+                } case 26: {
                     this.state.push(this.state.peekStack())
                     break
-                } case 28: {
+                } case 27: {
                     this.state.increment()
                     const fnIdx = this.state.peek()
 
@@ -177,7 +189,7 @@ export default class Executor {
                     
                     this.state.push(res)
                     break
-                } case 29: {
+                } case 28: {
                     this.state.increment()
                     const fnIdx = this.state.peek()
 
@@ -194,18 +206,28 @@ export default class Executor {
                     this.callStack.push(this.state.getCurrentInstructionPointer())
                     this.state.jump(fnObj.entryPoint)
                     continue
-                } case 30: {
+                } case 29: {
                     this.state.increment()
                     const fnNameIdx = this.state.peek()
 
                     const fnName = this.constantPool.get(fnNameIdx)
                     this.state.increment()
                     this.scopeStack.storeUserDefinedFunction(fnName, this.state.peek(), 'any', this.state.getCurrentInstructionPointer() + 3)
-                    this.logDataStructures()
+                    break
+                } case 30: {
+                    const returnAddress = this.callStack.pop()
+                    this.scopeStack.pop()
+                    this.state.jump(returnAddress)
                     break
                 } case 31: {
-                    const returnAddress = this.callStack.pop()
-                    this.state.jump(returnAddress)
+                    const a = this.state.pop()
+                    const b = this.state.pop()
+                    this.state.push(b && a)
+                    break
+                } case 32: {
+                    const a = this.state.pop()
+                    const b = this.state.pop()
+                    this.state.push(b || a)
                     break
                 } default: {
                     console.log(`Stuck at: ${this.state.getCurrentInstructionPointer()}: ${this.state.peek()}`)
