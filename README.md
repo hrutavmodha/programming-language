@@ -1,4 +1,4 @@
-# Custom Bytecode Compiler & Virtual Machine (Toy Programming Language)
+# Custom Bytecode Compiler & Virtual Machine
 
 This repository contains a full-stack, typescript-based compiler and virtual machine implementation for a custom block-scoped scripting language. The pipeline includes:
 1. **Lexical Analysis (Lexer)**: Tokenization of source text into discrete syntactic units.
