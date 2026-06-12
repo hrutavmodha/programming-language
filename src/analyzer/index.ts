@@ -155,11 +155,14 @@ export default class Analyzer {
                         value: left.value + right.value
                     }
                 } else if (left.type === 'StringLiteral') {
-                    if (right.type !== 'StringLiteral') {
+                    if (right.type === 'StringLiteral') {
                         error(`Incompatible types for concatenation: ${left.type} and ${right.type}`)
-                    } return {
-                        type: 'StringLiteral',
-                        value: left.value + right.value
+                        return {
+                            type: 'StringLiteral',
+                            value: left.value + right.value
+                        }
+                    } else {
+                        return node
                     }
                 } else if (left.type === 'Identifier' || right.type === 'Identifier') {
                     return {
@@ -220,15 +223,16 @@ export default class Analyzer {
     private analyzeCallExpression(node: Node) {
         if (node.callee.type === 'Identifier') {
             const symbol = this.symbolTable.get(node.callee.name) as FunctionSymbol
+            if (node?.arguments?.length && symbol.arity) {
+                if (node?.arguments?.length !== symbol?.arity) {
+                    error(`Expected ${symbol?.arity} parameters, but got ${node?.arguments?.length} instead`)
+                }
 
-            if (node?.arguments?.length !== symbol?.arity) {
-                error(`Expected ${symbol?.arity} parameters, but got ${node?.arguments?.length} instead`)
-            }
-
-            if (symbol?.type === 'function') {
-                node.arguments.map((args: any) => {
-                    this.analyzeExpression(args)
-                })
+                if (symbol?.type === 'function') {
+                    node.arguments.map((args: any) => {
+                        this.analyzeExpression(args)
+                    })
+                }
             }
         } else {
             error(`Function name must be a valid identifier`)

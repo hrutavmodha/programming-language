@@ -1,6 +1,3 @@
-import { writeFileSync } from 'fs'
-// import type { Symbol } from '../types/scope.ts'
-import { readFileSync } from 'fs'
 import Analyzer from './analyzer/index.ts'
 import AnalyzerState from './analyzer/state.ts'
 
@@ -33,7 +30,7 @@ export function interprete(src: string): any {
     const analyzer = new Analyzer(analyzerState)
 
     analyzerState.scopeStack.storeNativeFunction('print', 1, 'void', -1)
-    analyzerState.scopeStack.storeNativeFunction('add', 2, 'number', -1)
+    analyzerState.scopeStack.storeNativeFunction('input', 1, 'string', -1)
 
     const analyzedAst = analyzer.analyze()
     // console.log(JSON.stringify(
@@ -48,8 +45,6 @@ export function interprete(src: string): any {
     const bytecodes = generator.generate()
     console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
-    writeFileSync('compiled', bytecodes)
-
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
     
@@ -58,12 +53,6 @@ export function interprete(src: string): any {
 }
 
 interprete(`
-    # Function to subtract 2 values
-    function subtract(a, b) { 
-        return a - b;
-    }
-
-    const a = subtract(10, 2);
-    print(subtract);
+    const userInput = input("Enter a number: ");
+    print("You entered: " + userInput);
 `)
-

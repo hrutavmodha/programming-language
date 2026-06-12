@@ -233,6 +233,7 @@ export default class Executor {
                     console.log(`Stuck at: ${this.state.getCurrentInstructionPointer()}: ${this.state.peek()}`)
                 }
             }
+            
             this.state.increment()
         }
     }
