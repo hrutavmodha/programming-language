@@ -4,12 +4,13 @@ import { ScopeStack } from '../shared/scope.ts'
 import type { Symbol } from '../../types/scope.ts'
 import { nativeFunctions } from '../shared/native-functions.ts'
 import error from '../shared/error.ts'
+import type { FunctionMetaData } from '../../types/functions.d.ts'
 
 export default class Executor {
     private state: ExecutorState;
     private constantPool: ConstantPool;
     private scopeStack: ScopeStack;
-    private callStack: Array<number>;
+    private callStack: Array<FunctionMetaData>;
 
     constructor(state: ExecutorState, constantPool: ConstantPool) {
         this.state = state
@@ -203,7 +204,10 @@ export default class Executor {
                         error(`Expected ${fnObj.arity} arguments, but got ${arity}`)
                     }
 
-                    this.callStack.push(this.state.getCurrentInstructionPointer())
+                    this.callStack.push({
+                        scopeDepth: this.scopeStack.length(),
+                        returnAddress: this.state.getCurrentInstructionPointer()
+                    })
                     this.state.jump(fnObj.entryPoint)
                     continue
                 } case 29: {
@@ -215,9 +219,13 @@ export default class Executor {
                     this.scopeStack.storeUserDefinedFunction(fnName, this.state.peek(), 'any', this.state.getCurrentInstructionPointer() + 3)
                     break
                 } case 30: {
-                    const returnAddress = this.callStack.pop()
-                    this.scopeStack.pop()
-                    this.state.jump(returnAddress)
+                    const callFrame = this.callStack.pop()
+
+                    for (let i = 0; this.scopeStack.length() > callFrame.scopeDepth; i++) {
+                        this.scopeStack.pop()
+                    }
+                    
+                    this.state.jump(callFrame.returnAddress)
                     break
                 } case 31: {
                     const a = this.state.pop()

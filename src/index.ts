@@ -31,6 +31,9 @@ export function interprete(src: string): any {
 
     analyzerState.scopeStack.storeNativeFunction('print', 1, 'void', -1)
     analyzerState.scopeStack.storeNativeFunction('input', 1, 'string', -1)
+    analyzerState.scopeStack.storeNativeFunction('createFile', 1, 'void', -1)
+    analyzerState.scopeStack.storeNativeFunction('writeFile', 2, 'void', -1)
+    analyzerState.scopeStack.storeNativeFunction('deleteFile', 1, 'void', -1)
 
     const analyzedAst = analyzer.analyze()
     // console.log(JSON.stringify(
@@ -43,7 +46,7 @@ export function interprete(src: string): any {
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    // console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
+    console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
@@ -52,16 +55,9 @@ export function interprete(src: string): any {
     executor.execute()
 }
 
-interprete(`
-    class Test inherits Teacher {
-        x = 5;
 
-        public get() {
-            return x;
-        }
-        
-        private set(value) {
-            x = value;
-        }
-    }
+interprete(`
+    createFile("test.txt");
+    writeFile("test.txt", "Hello, World!");
 `)
+

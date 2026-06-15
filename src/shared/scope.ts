@@ -61,6 +61,10 @@ export class ScopeStack {
         return this.scopeStack[this.scopeStack.length - 1]
     }
 
+    length() {
+        return this.scopeStack.length
+    }
+
     get(name: string): any {
         const popped: ScopeInterface[] = []
         let value: any = undefined

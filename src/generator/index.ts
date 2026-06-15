@@ -74,12 +74,51 @@ export default class Generator {
             } case 'ReturnStatement': {
                 this.generateReturnStatement(node)
                 break
+            } case 'ClassDeclaration': {
+                this.generateClassDeclaration(node)
+                break
             } default: {
                 this.generateExpression(node)
-                this.state.push(23)
+                this.state.push(23) // Pop
             }
         }
     } 
+
+    private generateClassDeclaration(node: Node) {
+        this.state.push(33) // Define Class
+        
+        const cpIdx = this.constantPool.store(node.name.name)
+
+        this.state.push(cpIdx)
+
+        let props: Array<any> = []
+        let methods: Array<any> = []
+
+        node?.body?.forEach((element: any) => {
+            switch (element) {
+                case 'PropertyDeclaration':
+                    props.push(element)
+                    break
+                case 'MethodDeclaration':
+                    methods.push(element)
+                    break
+                default:
+                    error(`Unsupport class entity type found: "${element.type}"`)
+            
+            }
+        })
+
+        this.state.push(props.length)
+        this.state.push(methods.length)
+
+        props.forEach((property: any) => {
+            this.generateVariableDeclaration(property)
+        })
+
+        methods.forEach((method: any) => {
+            this.generateFunctionDeclaration(method)
+        })
+    }
 
     private generateReturnStatement(node: Node) {
         this.generateExpression(node.expression)

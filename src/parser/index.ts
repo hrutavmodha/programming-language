@@ -237,6 +237,21 @@ export default class Parser {
                     type: 'CallExpression',
                     callee, arguments: args
                 }
+            } else if (this.state.peek()?.type === 'DOT') {
+                this.state.increment()
+                
+                const name = this.state.peek().lexeme
+
+                this.state.expect('IDENTIFIER')
+
+                callee = {
+                    type: 'MemberExpression',
+                    object: callee,
+                    property: {
+                        type: 'Identifier',
+                        name
+                    }
+                }
             } else {
                 break
             }
