@@ -43,23 +43,25 @@ export function interprete(src: string): any {
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
+    // console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
     
-    console.log("\nOutput:")
+    // console.log("\nOutput:")
     executor.execute()
 }
 
 interprete(`
-    function factorial(n) {
-        if n == 0 | n == 1 {
-            return n;
-        } else {
-            return n * factorial(n - 1);
+    class Test inherits Teacher {
+        x = 5;
+
+        public get() {
+            return x;
+        }
+        
+        private set(value) {
+            x = value;
         }
     }
-
-    print(factorial(5)); # Should print 120
 `)

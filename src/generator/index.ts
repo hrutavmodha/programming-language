@@ -211,7 +211,7 @@ export default class Generator {
         const continueIdx = this.state.length()
         this.generateStatement(node.update)
 
-        this.state.push(15)
+        this.state.push(14)
         this.state.push(jmpIdx)
         
         this.state.update(jmpIfFalseIdx, this.state.length())

@@ -44,6 +44,8 @@ export default class Parser {
                 return this.parseFunctionDeclaration()
             } case 'KEYWORD_RETURN': {
                 return this.parseReturnStatement()
+            } case 'KEYWORD_CLASS': {
+                return this.parseClassDeclaration()
             } default: {
                 const node = this.parseExpression()
                 this.state.expect('SEMI_COLON')
@@ -488,6 +490,110 @@ export default class Parser {
         return {
             type: 'ReturnStatement',
             expression
+        }
+    }
+
+    private parseClassDeclaration(): any {
+        this.state.expect('KEYWORD_CLASS')
+
+        const name = {
+            type: 'Identifier',
+            name: this.state.peek().lexeme
+        }
+        let body: Array<any> = []
+        let parent: any = {}
+
+        this.state.expect('IDENTIFIER')
+
+        if (this.state.peek().type === 'KEYWORD_INHERITS') {
+            this.state.increment()
+
+            parent = {
+                type: 'Identifier',
+                name: this.state.peek().lexeme
+            }
+
+            this.state.expect('IDENTIFIER')
+        } else {
+            parent = null
+        }
+
+        this.state.expect('OPENING_CURLY_BRACE')
+        
+        while (!this.state.isAtEnd() && this.state.peek().type !== 'CLOSING_CURLY_BRACE') {
+            const maybeAccessModifier = this.state.peek()
+            let accessModifier: string | null = null 
+
+            if (maybeAccessModifier.type === 'KEYWORD_PUBLIC' || maybeAccessModifier.type === 'KEYWORD_PRIVATE') {
+                accessModifier = maybeAccessModifier.lexeme
+                this.state.increment()
+            }
+
+            const name = {
+                type: 'Identifier',
+                name: this.state.peek().lexeme
+            }
+
+            this.state.expect('IDENTIFIER')
+            
+            if (this.state.peek().type === 'EQUALS') {
+                let value: any = null
+
+                this.state.increment()
+
+                value = this.parseExpression()
+
+                this.state.expect('SEMI_COLON')
+            
+                const node = {
+                    type: 'PropertyDeclaration',
+                    accessModifier,
+                    name, value
+                }
+
+                body.push(node)
+            } else if (this.state.peek().type === 'OPENING_PARENTHESIS') {
+                const args: Array<any> = []
+
+                this.state.increment()
+
+                while (this.state.peek().type !== 'CLOSING_PARENTHESIS') {
+                    this.state.expect('IDENTIFIER')
+
+                    args.push({
+                        type: 'Identifier',
+                        name: this.state.peek(-1).lexeme
+                    })
+
+                    if (this.state.peek().type === 'COMMA') {
+                        this.state.increment()
+                    } else {
+                        break
+                    }
+                }
+
+                this.state.expect('CLOSING_PARENTHESIS')
+
+                const methodBody = this.parseBlockStatement()
+
+                const node = {
+                    type: 'MethodDeclaration',
+                    accessModifier,
+                    name,
+                    arguments: args,
+                    body: methodBody
+                }
+
+                body.push(node)
+            }
+        }
+
+        this.state.expect('CLOSING_CURLY_BRACE')
+
+        return {
+            type: 'ClassDeclaration', 
+            parent,
+            name, body
         }
     }
 }

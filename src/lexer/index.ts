@@ -66,6 +66,30 @@ export default class Lexer {
             } case 'return': {
                 this.state.push('KEYWORD_RETURN', lexeme, null)
                 break
+            } case 'class': {
+                this.state.push('KEYWORD_CLASS', lexeme, null)
+                break
+            } case 'method': {
+                this.state.push('KEYWORD_METHOD', lexeme, null)
+                break
+            } case 'property': {
+                this.state.push('KEYWORD_PROPERTY', lexeme, null)
+                break
+            } case 'inherits': {
+                this.state.push('KEYWORD_INHERITS', lexeme, null)
+                break
+            } case 'public': {
+                this.state.push('KEYWORD_PUBLIC', lexeme, null)
+                break
+            } case 'private': {
+                this.state.push('KEYWORD_PRIVATE', lexeme, null)
+                break
+            } case 'static': {
+                this.state.push('KEYWORD_STATIC', lexeme, null)
+                break
+            } case 'override': {
+                this.state.push('KEYWORD_OVERRIDE', lexeme, null)
+                break
             } default: {
                 this.state.push('IDENTIFIER', lexeme, null)
             }
