@@ -200,6 +200,9 @@ export default class Parser {
                 type: 'BooleanLiteral',
                 value: this.state.advance().lexeme
             }
+        } else if (this.state.peek()?.type === 'KEYWORD_THIS') {
+            this.state.increment()
+            return { type: 'ThisExpression' }
         } else if (this.state.peek()?.type === 'IDENTIFIER') {
             return {
                 type: 'Identifier',

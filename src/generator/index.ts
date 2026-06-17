@@ -95,7 +95,7 @@ export default class Generator {
         let methods: Array<any> = []
 
         node?.body?.forEach((element: any) => {
-            switch (element) {
+            switch (element.type) {
                 case 'PropertyDeclaration':
                     props.push(element)
                     break
@@ -111,13 +111,21 @@ export default class Generator {
         this.state.push(props.length)
         this.state.push(methods.length)
 
+        this.state.push(21)
+
         props.forEach((property: any) => {
-            this.generateVariableDeclaration(property)
+            this.generateVariableDeclaration({
+                type: 'VariableDeclaration',
+                name: property.name.name,
+                value: property.value
+            })
         })
 
         methods.forEach((method: any) => {
             this.generateFunctionDeclaration(method)
         })
+
+        this.state.push(22)
     }
 
     private generateReturnStatement(node: Node) {
@@ -147,6 +155,13 @@ export default class Generator {
         node.body.body.forEach((stmt: Node) => {
             this.generateStatement(stmt)
         })
+
+        if (node.body.body[node.body.body.length - 1].type !== 'ReturnStatement') {
+            this.generateReturnStatement({
+                type: 'ReturnStatement',
+                expression: undefined
+            })
+        }
 
         this.state.push(22)
 
@@ -458,30 +473,64 @@ export default class Generator {
                 } 
                 break
             } case 'AssignmentExpression': {
-                if (node.left.type !== 'Identifier') {
-                    error(`Expected identifier name, got ${node.left.type}`)
+                if (node.left.type === 'MemberExpression') {
+                    this.generateExpression(node.left.object)
+                    this.generateExpression(node.right)
+
+                    this.state.push(36) // Set Prop
+                    
+                    const propIdx = this.constantPool.store(node.left.property.name)
+                    
+                    this.state.push(propIdx)
+                } else if (node.left.type === 'Identifier') {
+                    const varIdx = this.constantPool.store(node.left.name)
+                    this.generateExpression(node.right)
+                    this.state.push(12)
+                    this.state.push(varIdx)
+                } else {
+                    error(`Expected identifier or member expression, got ${node.left.type}`)
                 }
 
-                const varIdx = this.constantPool.store(node.left.name)
-                this.generateExpression(node.right)
-                this.state.push(12)
-                this.state.push(varIdx)
-                this.state.push(23) // Pop
+                this.state.push(23)
+                break
+            } case 'MemberExpression': {
+                this.generateExpression(node.object)
+                this.state.push(35) // Get Prop
+                
+                const propIdx = this.constantPool.store(node.property.name)
+
+                this.state.push(propIdx)
                 break
             } case 'CallExpression': {
+                let isMethod: boolean = false
+                
                 node.arguments.forEach((arg: any) => {
                     this.generateExpression(arg)
                 })
 
-                if (node.callee?.name in nativeFunctions) {
+                if (node.callee.type === 'MemberExpression') {
+                    isMethod = true
+                    this.generateExpression(node.callee.object)
+                    this.state.push(34)
+                } else if (node.callee?.name in nativeFunctions) {
                     this.state.push(27) // Call Native
                 } else {
                     this.state.push(28) // Call
                 }
 
-                const cpIdx = this.constantPool.store(node.callee?.name)
+                let cpIdx = 0
+
+                if (isMethod) {
+                    cpIdx = this.constantPool.store(node.callee.property.name)
+                } else {
+                    cpIdx = this.constantPool.store(node.callee.name)
+                }
+
                 this.state.push(cpIdx)
                 this.state.push(node.arguments.length)
+                break
+            } case 'ThisExpression': {
+
                 break
             } case 'NumberLiteral': {
                 const cpIdx = this.constantPool.store(Number(node.value))

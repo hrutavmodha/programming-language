@@ -14,6 +14,8 @@ import LexerUtils from './lexer/utils.ts'
 import Parser from './parser/index.ts'
 import ParserState from './parser/state.ts'
 
+import { nativeFunctions } from './shared/native-functions.ts'
+
 export function interprete(src: string): any {
     const lexerState = new LexerState(src)
     const lexerUtils = new LexerUtils()
@@ -24,18 +26,16 @@ export function interprete(src: string): any {
     const parserState = new ParserState(tokens)
     const parser = new Parser(parserState)
     const ast = parser.parse()
-    console.log("\nAST:", JSON.stringify(ast, null, 2))
+    // console.log("\nAST:", JSON.stringify(ast, null, 2))
 
-    const analyzerState = new AnalyzerState(ast)
-    const analyzer = new Analyzer(analyzerState)
+    // const analyzerState = new AnalyzerState(ast)
+    // const analyzer = new Analyzer(analyzerState)
 
-    analyzerState.scopeStack.storeNativeFunction('print', 1, 'void', -1)
-    analyzerState.scopeStack.storeNativeFunction('input', 1, 'string', -1)
-    analyzerState.scopeStack.storeNativeFunction('createFile', 1, 'void', -1)
-    analyzerState.scopeStack.storeNativeFunction('writeFile', 2, 'void', -1)
-    analyzerState.scopeStack.storeNativeFunction('deleteFile', 1, 'void', -1)
+    // for (let func in nativeFunctions) {
+    //     analyzerState.scopeStack.storeNativeFunction(func, nativeFunctions[func].length, 'any', -1)
+    // }
 
-    const analyzedAst = analyzer.analyze()
+    // const analyzedAst = analyzer.analyze()
     // console.log(JSON.stringify(
     //         analyzerState.scopeStack.getScopeStack(),
     //         (_: any, value: any) => (value instanceof Map ? Object.fromEntries(value) : value),
@@ -46,18 +46,27 @@ export function interprete(src: string): any {
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
+    // console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
-    
     // console.log("\nOutput:")
     executor.execute()
+
 }
 
 
 interprete(`
-    createFile("test.txt");
-    writeFile("test.txt", "Hello, World!");
+    class Test {
+        marks = 9;
+    }
+
+    const test = Test();
+    const x = test.marks;
+
+    test.marks = test.marks * 2;
+    
+    print(test.marks);
+    print(x);
 `)
 

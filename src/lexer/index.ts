@@ -90,6 +90,9 @@ export default class Lexer {
             } case 'override': {
                 this.state.push('KEYWORD_OVERRIDE', lexeme, null)
                 break
+            } case 'this': {
+                this.state.push('KEYWORD_THIS', lexeme, null)
+                break
             } default: {
                 this.state.push('IDENTIFIER', lexeme, null)
             }

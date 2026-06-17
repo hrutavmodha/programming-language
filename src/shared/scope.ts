@@ -1,4 +1,5 @@
 import type {
+    ClassSymbol,
     ConstantSymbol,
     FunctionSymbol,
     ScopeInterface,
@@ -7,7 +8,6 @@ import type {
     VariableSymbol
 } from '../../types/scope.d.ts'
 import error from './error.ts'
-import { nativeFunctions } from './native-functions.ts'
 
 export class Scope {
     private symbols: ScopeInterface
@@ -88,6 +88,11 @@ export class ScopeStack {
                 } else if (symbol.type === 'function') {
                     value = symbol
                     isFound = true
+                    break
+                } else if (symbol.type === 'class') {
+                    value = symbol
+                    isFound = true
+                    break
                 }
             }
         }
@@ -156,6 +161,28 @@ export class ScopeStack {
             arity,
             returnType,
             entryPoint
+        }
+
+        scope.set(name, symbol)
+
+        this.scopeStack.push(scope)
+    }
+
+    storeClass(name: string): void {
+        const symbol: ClassSymbol = {
+            type: 'class',
+            methods: new Map<string, FunctionSymbol>(),
+            properties: new Map<string, VariableSymbol>(),
+        }
+
+        const scope = this.scopeStack.pop()
+
+        if (!scope) {
+            error('No active scope found')
+        }
+
+        if (scope.has(name)) {
+            error(`Class "${name}" is already registered`)
         }
 
         scope.set(name, symbol)
