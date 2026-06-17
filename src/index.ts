@@ -58,15 +58,24 @@ export function interprete(src: string): any {
 
 interprete(`
     class Test {
-        marks = 9;
+        marks = 10;
+
+        getMarks() {
+            return this.marks;
+        }
+
+        setMarks(newValue) {
+            this.marks = newValue;
+        }
     }
 
-    const test = Test();
-    const x = test.marks;
+    const mid = Test();
+    const final = Test();
 
-    test.marks = test.marks * 2;
-    
-    print(test.marks);
-    print(x);
+    mid.setMarks(30);
+    final.setMarks(70);
+
+    print(mid.getMarks());
+    print(final.getMarks());
 `)
 

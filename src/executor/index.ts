@@ -1,7 +1,7 @@
 import ExecutorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
 import { ScopeStack } from '../shared/scope.ts'
-import type { ClassSymbol, Symbol } from '../../types/scope.ts'
+import type { ClassSymbol, Symbol, VariableSymbol } from '../../types/scope.ts'
 import { nativeFunctions } from '../shared/native-functions.ts'
 import error from '../shared/error.ts'
 import type { FunctionMetaData } from '../../types/functions.d.ts'
@@ -238,11 +238,19 @@ export default class Executor {
                         this.state.jump(Obj.entryPoint)
 
                     } else if (Obj.type === 'class') {
-                        // const instance = {
-                        //     [fnName]: 
-                        // }
+                        const properties = new Map<string, VariableSymbol>()
 
-                        this.state.push(Obj)
+                        Obj.properties.forEach((prop: any, key: string) => {
+                            properties.set(key, { ...prop })
+                        })
+
+                        const instance: ClassSymbol = {
+                            type: 'class',
+                            properties,
+                            methods: Obj.methods
+                        }
+                        
+                        this.state.push(instance)
                     }
                     break
                 } case 29: {
@@ -285,20 +293,29 @@ export default class Executor {
                     break
                 } case 34: {
                     this.state.increment()
+
                     const methodIdx = this.state.peek()
                     const methodName = this.constantPool.get(methodIdx)
 
                     this.state.increment()
                     const arity = this.state.peek()
 
+                    const instance = this.state.pop()
+
                     const args: Array<any> = []
                     for (let i = 0; i < arity; i++) {
                         args.unshift(this.state.pop())
                     }
 
-                    const instance = this.state.pop()
+                    this.callStack.push({
+                        returnAddress: this.state.getCurrentInstructionPointer(),
+                        scopeDepth: this.scopeStack.length()
+                    })
+
+                    this.state.push(instance)
+                    args.forEach(arg => this.state.push(arg))
                     this.state.jump(instance.methods.get(methodName).entryPoint)
-                    break
+                    continue
                 } case 35: {
                     this.state.increment()
 
@@ -312,17 +329,17 @@ export default class Executor {
                 } case 36: {
                     this.state.increment()
                     const newValue = this.state.pop()
+                    const instance = this.state.pop()
                     const propIdx =  this.state.peek()
                     const propName = this.constantPool.get(propIdx)
-                    const instance = this.state.pop()
                     instance.properties.get(propName).value = newValue 
-                    // this.state.push(newValue)
+                    this.state.push(newValue)
                     break
                 } default: {
                     console.log(`Stuck at: ${this.state.getCurrentInstructionPointer()}: ${this.state.peek()}`)
                 }
             }
-            
+
             this.state.increment()
         }
     }

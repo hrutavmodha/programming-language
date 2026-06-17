@@ -122,6 +122,8 @@ export default class Analyzer {
                 return this.analyzeArthmeticExpression(node)
             } case 'CallExpression': {
                 return this.analyzeCallExpression(node)
+            } case 'ThisExpression': {
+                break
             } case 'NumberLiteral': {
                 return {
                     type: 'NumberLiteral',

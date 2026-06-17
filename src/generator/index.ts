@@ -122,8 +122,45 @@ export default class Generator {
         })
 
         methods.forEach((method: any) => {
-            this.generateFunctionDeclaration(method)
+            this.state.push(29)
+            const cpIdx = this.constantPool.store(method.name.name)
+            this.state.push(cpIdx)
+
+            this.state.push(method.arguments.length)
+
+            this.state.push(14)
+            const jmpIdx = this.state.length()
+            this.state.push(-1)
+
+            this.state.push(21)
+
+            method.arguments.slice().reverse().forEach((arg: any) => {
+                this.state.push(10)
+                const nameIdx = this.constantPool.store(arg?.name)
+                this.state.push(nameIdx)
+            })
+
+            this.state.push(10)
+            const thisIdx = this.constantPool.store('this')
+            this.state.push(thisIdx)
+
+            method.body.body.forEach((stmt: Node) => {
+                this.generateStatement(stmt)
+            })
+
+            if (method.body.body[method.body.body.length - 1].type !== 'ReturnStatement') {
+                this.generateReturnStatement({
+                    type: 'ReturnStatement',
+                    expression: undefined
+                })
+            }
+
+            this.state.push(22)
+
+            this.state.update(jmpIdx, this.state.length())
         })
+
+
 
         this.state.push(22)
     }
@@ -530,7 +567,9 @@ export default class Generator {
                 this.state.push(node.arguments.length)
                 break
             } case 'ThisExpression': {
-
+                this.state.push(11)
+                const cpIdx = this.constantPool.store('this')
+                this.state.push(cpIdx)
                 break
             } case 'NumberLiteral': {
                 const cpIdx = this.constantPool.store(Number(node.value))
