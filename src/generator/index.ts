@@ -527,8 +527,6 @@ export default class Generator {
                 } else {
                     error(`Expected identifier or member expression, got ${node.left.type}`)
                 }
-
-                this.state.push(23)
                 break
             } case 'MemberExpression': {
                 this.generateExpression(node.object)

@@ -28,14 +28,14 @@ export function interprete(src: string): any {
     const ast = parser.parse()
     // console.log("\nAST:", JSON.stringify(ast, null, 2))
 
-    // const analyzerState = new AnalyzerState(ast)
-    // const analyzer = new Analyzer(analyzerState)
+    const analyzerState = new AnalyzerState(ast)
+    const analyzer = new Analyzer(analyzerState)
 
-    // for (let func in nativeFunctions) {
-    //     analyzerState.scopeStack.storeNativeFunction(func, nativeFunctions[func].length, 'any', -1)
-    // }
+    for (let func in nativeFunctions) {
+        analyzerState.scopeStack.storeNativeFunction(func, nativeFunctions[func].length, 'any', -1)
+    }
 
-    // const analyzedAst = analyzer.analyze()
+    const analyzedAst = analyzer.analyze()
     // console.log(JSON.stringify(
     //         analyzerState.scopeStack.getScopeStack(),
     //         (_: any, value: any) => (value instanceof Map ? Object.fromEntries(value) : value),
@@ -50,32 +50,25 @@ export function interprete(src: string): any {
 
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
+
     // console.log("\nOutput:")
     executor.execute()
-
 }
 
 
 interprete(`
     class Test {
-        marks = 10;
+        value = 0;
 
-        getMarks() {
-            return this.marks;
-        }
-
-        setMarks(newValue) {
-            this.marks = newValue;
+        init(newValue) {
+            this.value = newValue;
         }
     }
 
-    const mid = Test();
-    const final = Test();
+    
+    const test = Test(10);
+    
+    print(test.value);
 
-    mid.setMarks(30);
-    final.setMarks(70);
-
-    print(mid.getMarks());
-    print(final.getMarks());
 `)
 

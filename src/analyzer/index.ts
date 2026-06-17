@@ -123,6 +123,7 @@ export default class Analyzer {
             } case 'CallExpression': {
                 return this.analyzeCallExpression(node)
             } case 'ThisExpression': {
+                console.log('Symbol Table:', this.symbolTable)
                 break
             } case 'NumberLiteral': {
                 return {
@@ -135,10 +136,8 @@ export default class Analyzer {
                     value: String(node.value)
                 }
             } case 'Identifier': {
-                return {
-                    type: 'Identifier',
-                    name: node.name
-                }
+            } case 'BooleanLiteral': {
+                return node
             }
         }
     }

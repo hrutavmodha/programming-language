@@ -72,6 +72,7 @@ export default class Executor {
                     const a = this.state.pop()
                     const b = this.state.pop()
                     this.state.push(b % a)
+                    break
                 } case 6: {
                     this.state.increment()
                     const valueIdx = this.state.peek()
@@ -239,18 +240,49 @@ export default class Executor {
 
                     } else if (Obj.type === 'class') {
                         const properties = new Map<string, VariableSymbol>()
-
-                        Obj.properties.forEach((prop: any, key: string) => {
-                            properties.set(key, { ...prop })
-                        })
-
+                        const init = Obj.methods.get('init')
                         const instance: ClassSymbol = {
                             type: 'class',
                             properties,
                             methods: Obj.methods
                         }
+                        const initArgs: Array<any> = []
+
+                        Obj.properties.forEach((prop: any, key: string) => {
+                            properties.set(key, { ...prop })
+                        })
+
                         
-                        this.state.push(instance)
+                        if (init) {
+                            for (let i = 0; i < arity; i++) {
+                                initArgs.push(this.state.pop())
+                            }
+
+                            if (initArgs.length !== init.arity) {
+                                error(`Expected ${init.arity} argument(s), but got ${initArgs.length}`)
+                            }
+
+                            this.state.push(instance)
+                            this.state.push(instance)
+
+                            initArgs.reverse().forEach((arg: any) => {
+                                this.state.push(arg)
+                            })
+                            
+                            this.callStack.push({
+                                scopeDepth: this.scopeStack.length(),
+                                returnAddress: this.state.getCurrentInstructionPointer()
+                            })
+
+                            this.state.jump(init.entryPoint)
+                            continue
+                        } else {
+                            if (arity > 0) {
+                                error(`Expected no arguments, but got ${arity}`)
+                            }
+
+                            this.state.push(instance)
+                        }
                     }
                     break
                 } case 29: {
