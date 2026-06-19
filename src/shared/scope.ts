@@ -2,10 +2,12 @@ import type {
     ClassSymbol,
     ConstantSymbol,
     FunctionSymbol,
+    PropertySymbol,
     ScopeInterface,
     ScopeStackInterface,
     Symbol,
-    VariableSymbol
+    VariableSymbol,
+    MethodSymbol
 } from '../../types/scope.d.ts'
 import error from './error.ts'
 
@@ -171,8 +173,8 @@ export class ScopeStack {
     storeClass(name: string): void {
         const symbol: ClassSymbol = {
             type: 'class',
-            methods: new Map<string, FunctionSymbol>(),
-            properties: new Map<string, VariableSymbol>(),
+            methods: new Map<string, MethodSymbol>(),
+            properties: new Map<string, PropertySymbol>(),
         }
 
         const scope = this.scopeStack.pop()

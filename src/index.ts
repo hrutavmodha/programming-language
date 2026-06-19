@@ -16,6 +16,8 @@ import ParserState from './parser/state.ts'
 
 import { nativeFunctions } from './shared/native-functions.ts'
 
+import { writeFileSync } from 'fs'
+
 export function interprete(src: string): any {
     const lexerState = new LexerState(src)
     const lexerUtils = new LexerUtils()
@@ -26,7 +28,7 @@ export function interprete(src: string): any {
     const parserState = new ParserState(tokens)
     const parser = new Parser(parserState)
     const ast = parser.parse()
-    // console.log("\nAST:", JSON.stringify(ast, null, 2))
+    console.log("\nAST:", JSON.stringify(ast, null, 2))
 
     const analyzerState = new AnalyzerState(ast)
     const analyzer = new Analyzer(analyzerState)
@@ -48,6 +50,8 @@ export function interprete(src: string): any {
     const bytecodes = generator.generate()
     // console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
+    writeFileSync('compiled', bytecodes)
+
     const executorState = new ExecutorState(bytecodes)
     const executor = new Executor(executorState, generator.getConstantPool())
 
@@ -56,12 +60,18 @@ export function interprete(src: string): any {
 }
 
 
+    /*  */
+
 interprete(`
     class Test {
-        value = 0;
+        private value = 0;
 
         init(newValue) {
             this.value = newValue;
+        }
+
+        get() {
+            return this.value;
         }
     }
 
@@ -69,6 +79,4 @@ interprete(`
     const test = Test(10);
     
     print(test.value);
-
 `)
-

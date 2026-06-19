@@ -1,5 +1,5 @@
 import type { Node } from '../../types/nodes.d.ts'
-import type { FunctionSymbol, Symbol } from '../../types/scope.ts'
+import type { FunctionSymbol, MethodSymbol, PropertySymbol, Symbol } from '../../types/scope.ts'
 import error from '../shared/error.ts'
 import AnalyzerState from './state.ts'
 import { ScopeStack } from '../shared/scope.ts'
@@ -45,6 +45,8 @@ export default class Analyzer {
                 return this.analyzeFunctionDeclaration(node)
             } case 'ReturnStatement': {
                 return this.analyzeReturnStatement(node)
+            } case 'ClassDeclaration': {
+                return this.analyzeClassDeclaration(node)
             } default: {
                 return this.analyzeExpression(node)
             }
@@ -82,6 +84,7 @@ export default class Analyzer {
         return node
     }
 
+    
     private analyzeIfStatement(node: Node) {
         // TODO
         return node
@@ -104,17 +107,59 @@ export default class Analyzer {
         if (this.loopDepth === 0) {
             error(`"break" outside loop is not allowed`)
         }
-
+        
         return node
     }
-
+    
     private analyzeContinueStatement(node: Node) {
         if (this.loopDepth === 0) {
             error(`"continue" outside loop is not allowed`)
         }
+        
+        return node
+    }
+    
+    private analyzeClassDeclaration(node: Node) {
+        this.symbolTable.storeClass(node.name.name)
+
+        node.body?.forEach((element: Node) => {
+            const classSymbol = this.symbolTable.get(node.name.name)
+
+            switch (element.type) {
+                case 'PropertyDeclaration': {
+                    const property = {
+                        type: 'variable',
+                        accessModifier: element.accessModifier,
+                        isStatic: element.isStatic,
+                        dataType: 'any'
+                    } as PropertySymbol
+
+                    classSymbol.properties.set(element.name.name, property)
+                    break
+                } case 'MethodDeclaration': {
+                    const method = {
+                        type: 'function',
+                        accessModifier: element.accessModifier,
+                        isStatic: element.isStatic,
+                        dataType: 'any',
+                        arity: element.arguments.length,
+                        entryPoint: -1,
+                        returnType: 'any'
+                    } as MethodSymbol
+
+                    classSymbol.methods.set(element.name.name, method)
+                    break
+                } default: {
+                    error(`Unexpected class member type: ${element.type}`)
+                }
+            }
+        })
+
+        console.log(this.symbolTable.get(node.name.name))
 
         return node
     }
+
 
     private analyzeExpression(node: Node) {
         switch (node.type) {
@@ -235,7 +280,10 @@ export default class Analyzer {
                     })
                 }
             }
-        } else {
+        } else if (node.callee.type === 'MemberExpression') {
+            // TODO
+        }
+        else {
             error(`Function name must be a valid identifier`)
         }
         return node

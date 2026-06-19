@@ -18,9 +18,20 @@ export interface FunctionSymbol extends BaseSymbol {
     entryPoint: number
 }
 
+export interface PropertySymbol extends VariableSymbol {
+    accessModifier: string | null
+    isStatic: boolean
+}
+
+export interface MethodSymbol extends FunctionSymbol {
+    accessModifier: string | null
+    isStatic: boolean
+}
+
+
 export interface ClassSymbol extends BaseSymbol {
-    methods: Map<string, FunctionSymbol>
-    properties: Map<string, VariableSymbol>
+    methods: Map<string, MethodSymbol>
+    properties: Map<string, PropertySymbol>
 }
 
 export type Symbol = VariableSymbol | ConstantSymbol | FunctionSymbol | ClassSymbol

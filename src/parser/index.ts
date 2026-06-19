@@ -541,9 +541,13 @@ export default class Parser {
         while (!this.state.isAtEnd() && this.state.peek().type !== 'CLOSING_CURLY_BRACE') {
             const maybeAccessModifier = this.state.peek()
             let accessModifier: string | null = null 
+            let isStatic: boolean = false
 
             if (maybeAccessModifier.type === 'KEYWORD_PUBLIC' || maybeAccessModifier.type === 'KEYWORD_PRIVATE') {
                 accessModifier = maybeAccessModifier.lexeme
+                this.state.increment()
+            } if (this.state.peek().type === 'KEYWORD_STATIC') {
+                isStatic = true
                 this.state.increment()
             }
 
@@ -566,7 +570,7 @@ export default class Parser {
                 const node = {
                     type: 'PropertyDeclaration',
                     accessModifier,
-                    name, value
+                    isStatic, name, value
                 }
 
                 body.push(node)
@@ -596,7 +600,8 @@ export default class Parser {
 
                 const node = {
                     type: 'MethodDeclaration',
-                    accessModifier,
+                    accessModifier, 
+                    isStatic,
                     name,
                     arguments: args,
                     body: methodBody
