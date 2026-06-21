@@ -1,6 +1,10 @@
-# HM Custom Bytecode VM Programming Language
+# Hindavi Swaraj Scripting Language (HSSL)
 
-A custom, compiled, and interpreted stack-based programming language featuring a full compiler pipeline, intermediate bytecode generation, and a high-performance stack-based virtual machine execution environment.
+A custom, compiled, and interpreted stack-based programming language featuring a full compiler pipeline, intermediate bytecode generation, and a high-performance stack-based virtual machine execution environment. HSSL source files use the `.hssl` extension.
+
+> [!NOTE]
+> **Language Localization Roadmap**: HSSL is committed to incorporating native/local Hindavi syntax keywords. For stability, ease of testing, and compiler pipeline development, HSSL retains standard English (foreign-oriented) keywords (e.g., `let`, `const`, `function`, `class`, `if`/`else`) until the `v1.0.0` release, after which the compiler pipeline will be refactored to support fully localized and native keyword sets.
+
 
 ---
 
@@ -208,8 +212,18 @@ print(fibonacci(7)); // Outputs 13
 
 ## How to Run
 
-To run a script using the custom interpreter, pass your source code string into the `interprete()` function in [index.ts](file:///home/hrutav-modha/Documents/programming-language/src/index.ts) and run:
+To run a script using the custom interpreter, write your code in a file with the `.hssl` extension, instantiate the `Interpreter` class, and call its `interpret(filePath)` method in [index.ts](file:///home/hrutav-modha/Documents/programming-language/src/index.ts):
+
+```typescript
+import Interpreter from "./src/index.ts";
+
+const interpreter = new Interpreter();
+interpreter.interpret("path/to/script.hssl");
+```
+
+To run the default test harness file (`counter.hssl`) included with the workspace, run:
 
 ```bash
-npx tsx src/index.ts
+npx ts-node src/index.ts
 ```
+

@@ -417,10 +417,7 @@ export default class Executor {
                     console.log(`Stuck at: ${this.state.getCurrentInstructionPointer()}: ${this.state.peek()}`)
                 }
             }
-
-            if (this.currentClass) {
-                console.log('Current Class:', this.currentClass)
-            }
+            
             this.state.increment()
         }
     }
