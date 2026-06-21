@@ -34,7 +34,7 @@ export interface ClassSymbol extends BaseSymbol {
     properties: Map<string, PropertySymbol>
 }
 
-export type Symbol = VariableSymbol | ConstantSymbol | FunctionSymbol | ClassSymbol
+export type Symbol = VariableSymbol | ConstantSymbol | FunctionSymbol | ClassSymbol | PropertySymbol | MethodSymbol
 
 export type ScopeInterface = Map<string, Symbol>
 

@@ -3,12 +3,14 @@ import type { FunctionSymbol, MethodSymbol, PropertySymbol, Symbol } from '../..
 import error from '../shared/error.ts'
 import AnalyzerState from './state.ts'
 import { ScopeStack } from '../shared/scope.ts'
+import { time } from 'console'
 
 export default class Analyzer {
     private state: AnalyzerState;
     private symbolTable: ScopeStack;
     private loopDepth: number = 0;
     private functionDepth: number = 0;
+    private currentClass: string = '';
 
     constructor(state: AnalyzerState) {
         this.state = state
@@ -56,12 +58,15 @@ export default class Analyzer {
     private analyzeVariableDeclaration(node: Node) {
         const value = this.analyzeExpression(node.value)
         const currentScope = this.symbolTable.pop()
+
         if (!currentScope) {
             error("No active scope")
         }
+        
         if (currentScope.has(node.name)) {
             error(`Variable "${node.name}" is already declared`)
         }
+        
         const symbolType = node.type === 'ConstantDeclaration' ? 'constant' : 'variable'
         let dataType: string | null = 'any'
         let initialValue: any = undefined
@@ -72,6 +77,9 @@ export default class Analyzer {
         } else if (value.type === 'StringLiteral') {
             dataType = 'string'
             initialValue = value.value
+        } else if (value.type === 'CallExpression') {
+            dataType = value.callee.name
+            initialValue = null
         }
 
         const symbol: Symbol = {
@@ -81,6 +89,7 @@ export default class Analyzer {
         }
         currentScope.set(node.name, symbol)
         this.symbolTable.push(currentScope)
+
         return node
     }
 
@@ -120,6 +129,9 @@ export default class Analyzer {
     }
     
     private analyzeClassDeclaration(node: Node) {
+        const prevClass = this.currentClass
+        this.currentClass = node.name.name
+
         this.symbolTable.storeClass(node.name.name)
 
         node.body?.forEach((element: Node) => {
@@ -155,7 +167,7 @@ export default class Analyzer {
             }
         })
 
-        console.log(this.symbolTable.get(node.name.name))
+        this.currentClass = prevClass
 
         return node
     }
@@ -168,8 +180,9 @@ export default class Analyzer {
             } case 'CallExpression': {
                 return this.analyzeCallExpression(node)
             } case 'ThisExpression': {
-                console.log('Symbol Table:', this.symbolTable)
                 break
+            } case 'MemberExpression': {
+                return this.analyzeMemberExpression(node)
             } case 'NumberLiteral': {
                 return {
                     type: 'NumberLiteral',
@@ -268,8 +281,12 @@ export default class Analyzer {
 
     private analyzeCallExpression(node: Node) {
         if (node.callee.type === 'Identifier') {
-            const symbol = this.symbolTable.get(node.callee.name) as FunctionSymbol
-            if (node?.arguments?.length && symbol.arity) {
+            let symbol = this.symbolTable.get(node.callee.name) as any
+            if (symbol && (symbol.type === 'variable' || symbol.type === 'constant')) {
+                symbol = symbol.value
+            }
+
+            if (symbol && node?.arguments?.length && symbol.arity) {
                 if (node?.arguments?.length !== symbol?.arity) {
                     error(`Expected ${symbol?.arity} parameters, but got ${node?.arguments?.length} instead`)
                 }
@@ -281,12 +298,39 @@ export default class Analyzer {
                 }
             }
         } else if (node.callee.type === 'MemberExpression') {
-            // TODO
-        }
-        else {
+            return this.analyzeMemberExpression(node.callee)
+        } else {
             error(`Function name must be a valid identifier`)
         }
+
         return node
+    }
+
+    private analyzeMemberExpression(node: Node) {
+        const symbol = this.symbolTable.get(node.object.name)
+        let blueprint: any
+
+        if (symbol.dataType) {
+            blueprint = this.symbolTable.get(symbol.dataType)
+        } else {
+            blueprint = symbol
+        }
+        
+        const checkOnMethods =
+            blueprint.methods.has(node.property.name) &&
+            // !blueprint.methods.get(node.property.name).isStatic &&
+            blueprint.methods.get(node.property.name).accessModifier !== 'private'
+        
+        const checkOnProperties =
+            blueprint.properties.has(node.property.name) &&
+            // !blueprint.properties.get(node.property.name).isStatic &&
+            blueprint.properties.get(node.property.name).accessModifier !== 'private'
+        
+        if (checkOnMethods || checkOnProperties) {
+            return node
+        } else {
+            error('Cannot access an invalid class member')
+        }
     }
 
     private analyzeFunctionDeclaration(node: Node) {

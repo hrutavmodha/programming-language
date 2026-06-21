@@ -265,12 +265,16 @@ export default class Lexer {
             
             // Multi-line Comments
             else if (this.state.peek() === '/' && this.state.peek(1) === '*') {
+                this.state.increment()
+                this.state.increment()
+
                 while (this.state.peek() !== '*' && this.state.peek(1) !== '/') {
                     this.state.increment()
                 }
 
                 this.state.increment()
                 this.state.increment()
+
                 continue
             }
 

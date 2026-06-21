@@ -1,7 +1,7 @@
 import ExecutorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
 import { ScopeStack } from '../shared/scope.ts'
-import type { ClassSymbol, Symbol, VariableSymbol } from '../../types/scope.ts'
+import type { ClassSymbol, PropertySymbol, Symbol, VariableSymbol } from '../../types/scope.ts'
 import { nativeFunctions } from '../shared/native-functions.ts'
 import error from '../shared/error.ts'
 import type { FunctionMetaData } from '../../types/functions.d.ts'
@@ -75,8 +75,10 @@ export default class Executor {
                     break
                 } case 6: {
                     this.state.increment()
+
                     const valueIdx = this.state.peek()
                     const value = this.constantPool.get(valueIdx)
+
                     this.state.push(value)
                     break
                 } case 7: {
@@ -91,6 +93,9 @@ export default class Executor {
                     this.state.push(null)
                     break
                 } case 10: {
+                    if (this.currentClass) {
+                        console.log(this.currentClass)
+                    }
                     this.state.increment()
                     const name = this.constantPool.get(this.state.peek())
                     this.scopeStack.storeVariable(name, this.state.pop())
@@ -98,7 +103,8 @@ export default class Executor {
                 } case 11: {
                     this.state.increment()
                     const name = this.constantPool.get(this.state.peek())
-                    this.state.push(this.scopeStack.get(name))
+                    const symbol = this.scopeStack.get(name)
+                    this.state.push(symbol && (symbol.type === 'variable' || symbol.type === 'constant') ? symbol.value : symbol)
                     break
                 } case 12: {
                     this.state.increment()
@@ -224,9 +230,15 @@ export default class Executor {
                     const arity = this.state.peek()
                     
                     const fnName = this.constantPool.get(fnIdx)
-                    const Obj = this.scopeStack.get(fnName)
+                    let Obj = this.scopeStack.get(fnName)
 
-                    if (Obj.type === 'function') {
+                    // console.log('Object:', Obj)
+
+                    if (Obj && (Obj.type === 'variable' || Obj.type === 'constant')) {
+                        Obj = Obj.value
+                    }
+
+                    if (Obj && Obj.type === 'function') {
                         if (Obj.arity !== arity) {
                             error(`Expected ${Obj.arity} arguments, but got ${arity}`)
                         }
@@ -237,19 +249,23 @@ export default class Executor {
                         })
 
                         this.state.jump(Obj.entryPoint)
+                        continue
 
-                    } else if (Obj.type === 'class') {
-                        const properties = new Map<string, VariableSymbol>()
+                    } else if (Obj && Obj.type === 'class') {
+                        const properties = new Map<string, PropertySymbol>()
                         const init = Obj.methods.get('init')
-                        const instance: ClassSymbol = {
+                        const instance = {
                             type: 'class',
                             properties,
+                            'class': Obj,
                             methods: Obj.methods
                         }
                         const initArgs: Array<any> = []
 
                         Obj.properties.forEach((prop: any, key: string) => {
-                            properties.set(key, { ...prop })
+                            if (!prop.isStatic) {
+                                properties.set(key, { ...prop })
+                            }
                         })
 
                         
@@ -280,7 +296,7 @@ export default class Executor {
                             if (arity > 0) {
                                 error(`Expected no arguments, but got ${arity}`)
                             }
-
+                            
                             this.state.push(instance)
                         }
                     }
@@ -346,6 +362,7 @@ export default class Executor {
 
                     this.state.push(instance)
                     args.forEach(arg => this.state.push(arg))
+
                     this.state.jump(instance.methods.get(methodName).entryPoint)
                     continue
                 } case 35: {
@@ -353,25 +370,57 @@ export default class Executor {
 
                     const propIdx = this.state.peek()
                     const propName = this.constantPool.get(propIdx)
-                    
                     const instance = this.state.pop()
+                    const prop =
+                        instance.properties.get(propName) ||
+                        instance['class'].properties.get(propName)
 
-                    this.state.push(instance.properties.get(propName).value)
+                    this.state.push(prop.value)
                     break
                 } case 36: {
                     this.state.increment()
+
                     const newValue = this.state.pop()
                     const instance = this.state.pop()
                     const propIdx =  this.state.peek()
                     const propName = this.constantPool.get(propIdx)
-                    instance.properties.get(propName).value = newValue 
+                    const prop = instance.properties.get(propName)
+
+                    if (prop) {
+                        prop.value = newValue
+                    } else {
+                        instance['class'].properties.get(propName).value = newValue
+                    }
+
                     this.state.push(newValue)
+                    break
+                } case 37: {
+                    this.state.increment()
+                    
+                    const nameIdx = this.state.peek()
+                    const name = this.constantPool.get(nameIdx)
+                    const accessModifier = this.state.peek(1)
+                    const isStatic = this.state.peek(2)
+                    const value = this.state.pop()
+                    
+                    this.scopeStack.storeProperty(
+                        name,
+                        isStatic === 1,
+                        accessModifier === 0 ? 'private' : 'public',
+                        value, typeof value
+                    )
+
+                    this.state.increment()
+                    this.state.increment()
                     break
                 } default: {
                     console.log(`Stuck at: ${this.state.getCurrentInstructionPointer()}: ${this.state.peek()}`)
                 }
             }
 
+            if (this.currentClass) {
+                console.log('Current Class:', this.currentClass)
+            }
             this.state.increment()
         }
     }

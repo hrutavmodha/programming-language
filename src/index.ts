@@ -28,7 +28,7 @@ export function interprete(src: string): any {
     const parserState = new ParserState(tokens)
     const parser = new Parser(parserState)
     const ast = parser.parse()
-    console.log("\nAST:", JSON.stringify(ast, null, 2))
+    // console.log("\nAST:", JSON.stringify(ast, null, 2))
 
     const analyzerState = new AnalyzerState(ast)
     const analyzer = new Analyzer(analyzerState)
@@ -48,7 +48,7 @@ export function interprete(src: string): any {
     const generatorState = new GeneratorState(ast)
     const generator = new Generator(generatorState)
     const bytecodes = generator.generate()
-    // console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
+    console.log("\nByteCodes:", JSON.stringify(bytecodes, null, 2))
 
     writeFileSync('compiled', bytecodes)
 
@@ -59,24 +59,57 @@ export function interprete(src: string): any {
     executor.execute()
 }
 
+/* 
+function fibonacci(n) {
+    if n == 0 | n == 1
+        return n;
+    else 
+        return fibonacci(n - 1) + fibonacci(n - 2);
+}
 
-    /*  */
+for let i = 0; i < 10; i = i + 1
+    print(fibonacci(i));
+
+*/
 
 interprete(`
-    class Test {
-        private value = 0;
-
-        init(newValue) {
-            this.value = newValue;
+    class Counter {
+        public static counter = 0;
+        
+        public increment() {
+            this.counter = this.counter + 1;
         }
 
-        get() {
-            return this.value;
+        public get() {
+            return this.counter;
         }
     }
 
-    
-    const test = Test(10);
-    
-    print(test.value);
+    class Test {
+        public static marks = 0;
+
+        public set(newValue) {
+            this.marks = newValue;
+        }
+    }
+
+    let counter1 = Counter();
+    let counter2 = Counter();
+
+    let mid = Test();
+    let final = Test();
+
+    counter1.increment();
+    counter2.increment();
+
+    print(counter1.counter);
+    print(counter2.counter);
+    print(Counter.counter);
+
+    mid.set(30);
+    final.set(70);
+
+    print(mid.marks);
+    print(final.marks);
+    print(Test.marks);
 `)

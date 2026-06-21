@@ -114,11 +114,41 @@ export default class Generator {
         this.state.push(21)
 
         props.forEach((property: any) => {
-            this.generateVariableDeclaration({
-                type: 'VariableDeclaration',
-                name: property.name.name,
-                value: property.value
-            })
+            if (property.value !== null) {
+                this.generateExpression(property.value)
+            } else {
+                this.state.push(9) // Push Null
+            }
+
+            const nameIdx = this.constantPool.store(property.name.name)
+            this.state.push(37)
+            this.state.push(nameIdx)
+
+            /* First byte represents access specifier:
+            1 ==== public
+            0 ==== private */
+            
+            switch (property.accessModifier) {
+                case 'public': {
+                    this.state.push(1)
+                    break
+                } case 'private': {
+                    this.state.push(0)
+                    break
+                } default: {
+                    error(`Unknown access modifier "${property.accessModifier}" for property "${property.name.name}" of class "${node.name.name}"`)
+                }
+            }
+
+            /* Second byte represents staticity of member 
+                1 ==== static
+                0 ==== not static
+            */
+            if (property.isStatic) {
+                this.state.push(1)
+            } else {
+                this.state.push(0)
+            }
         })
 
         methods.forEach((method: any) => {
@@ -424,7 +454,7 @@ export default class Generator {
         if (node.value !== null) {
             this.generateExpression(node.value)
         } else {
-            this.state.push(9)
+            this.state.push(9) // Push Null
         }
         const nameIdx = this.constantPool.store(node.name)
         this.state.push(10)
@@ -530,6 +560,7 @@ export default class Generator {
                 break
             } case 'MemberExpression': {
                 this.generateExpression(node.object)
+                
                 this.state.push(35) // Get Prop
                 
                 const propIdx = this.constantPool.store(node.property.name)

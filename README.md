@@ -107,6 +107,10 @@ Supports classes with properties, methods, constructor initialization, and singl
 - **Properties**: Declared inside the class block with initial values and optional accessibility/static modifiers (`public`, `private`, `static`). Semicolons are required.
 - **Initialization**: An optional `init` method acts as the instance constructor.
 - **Inheritance**: Defined using the `inherits` keyword.
+- **Member Access & Visibility Checks**: The static analyzer enforces access control. Specifically:
+  - Private methods and properties (marked `private`) cannot be accessed outside the class scope (i.e., on class instances).
+  - Static methods and properties (marked `static`) cannot be accessed on instances of the class.
+  - Illegal access triggers an analyzer error: `Cannot access static or private member of class on instance of class`.
 
 ```
 class Animal {
@@ -167,6 +171,11 @@ The virtual machine uses a custom instruction set. Each opcode is a 1-byte value
 | **14** | `0x0E` | `JUMP` | Unconditionally jumps to target. |
 | **28** | `0x1C` | `CALL` | Invokes a user-defined function. |
 | **30** | `0x1E` | `RETURN` | Returns from a user-defined function. |
+| **33** | `0x21` | `DEFINE_CLASS` | Defines a class in the Symbol Table. |
+| **34** | `0x22` | `CALL_METHOD` | Invokes a method on an instance. |
+| **35** | `0x23` | `GET_PROP` | Retrieves a property value from an instance. |
+| **36** | `0x24` | `SET_PROP` | Updates a property on an instance. |
+| **37** | `0x25` | `DEFINE_PROP` | Defines a class property with accessibility and staticity modifiers. |
 
 For the complete opcode matrix and stack effects, refer to [OPCODES.md](file:///home/hrutav-modha/Documents/programming-language/OPCODES.md).
 

@@ -84,7 +84,7 @@ export class ScopeStack {
                 const symbol = scope.get(name)
 
                 if (symbol.type === 'variable' || symbol.type === 'constant') {
-                    value = (symbol as VariableSymbol | ConstantSymbol).value
+                    value = symbol
                     isFound = true
                     break
                 } else if (symbol.type === 'function') {
@@ -94,6 +94,9 @@ export class ScopeStack {
                 } else if (symbol.type === 'class') {
                     value = symbol
                     isFound = true
+                    break
+                } else {
+                    console.log('[scope.ts]: Symbol:', symbol)
                     break
                 }
             }
@@ -111,6 +114,31 @@ export class ScopeStack {
         }
 
         return value
+    }
+
+    storeProperty(
+        propertyName: string,
+        isStatic: boolean,
+        accessModifier: 'private' | 'public',
+        value: any,
+        dataType: string
+    ) {
+        const scope = this.pop()
+
+        if (!scope) {
+            error(`No active scope found`)
+        }
+
+        const prop: PropertySymbol = {
+            type: 'variable',
+            value,
+            isStatic,
+            accessModifier,
+            dataType
+        }
+
+        scope.set(propertyName, prop)
+        this.push(scope)
     }
 
     storeConstant(name: string, value: any): void {
