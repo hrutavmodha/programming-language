@@ -177,6 +177,9 @@ export default class Analyzer {
         switch (node.type) {
             case 'ArithmeticExpression': {
                 return this.analyzeArthmeticExpression(node)
+            } case 'ComparisonExpression':
+            case 'LogicalExpression': {
+                return node
             } case 'CallExpression': {
                 return this.analyzeCallExpression(node)
             } case 'ThisExpression': {
@@ -193,8 +196,8 @@ export default class Analyzer {
                     type: 'StringLiteral',
                     value: String(node.value)
                 }
-            } case 'Identifier': {
-            } case 'BooleanLiteral': {
+            } case 'Identifier':
+            case 'BooleanLiteral': {
                 return node
             }
         }
@@ -206,6 +209,7 @@ export default class Analyzer {
 
         switch (node.operator) {
             case '+': {
+
                 if (left.type === 'NumberLiteral') {
                     if (right.type !== 'NumberLiteral') {
                         error(`Incompatible types for addition: ${left.type} and ${right.type}`)
@@ -241,8 +245,14 @@ export default class Analyzer {
                         type: 'NumberLiteral',
                         value: left.value - right.value
                     }
+                } else if (left.type === 'Identifier' || right.type === 'Identifier') {
+                    return {
+                        type: 'ArithmeticExpression',
+                        operator: node.operator,
+                        left, right
+                    }
                 } else {
-                    error(`Incompatible type for operator "+": ${left.type}`)
+                    error(`Incompatible type for operator "-": ${left.type}`)
                 }
                 break
             } case '*': {
@@ -253,8 +263,14 @@ export default class Analyzer {
                         type: 'NumberLiteral',
                         value: left.value * right.value
                     }
+                } else if (left.type === 'Identifier' || right.type === 'Identifier') {
+                    return {
+                        type: 'ArithmeticExpression',
+                        operator: node.operator,
+                        left, right
+                    }
                 } else {
-                    error(`Incompatible type for operator "+": ${left.type}`)
+                    error(`Incompatible type for operator "*": ${left.type}`)
                 }
                 break
             } case '/': {
@@ -265,8 +281,14 @@ export default class Analyzer {
                         type: 'NumberLiteral',
                         value: left.value / right.value
                     }
+                } else if (left.type === 'Identifier' || right.type === 'Identifier') {
+                    return {
+                        type: 'ArithmeticExpression',
+                        operator: node.operator,
+                        left, right
+                    }
                 } else {
-                    error(`Incompatible type for operator "+": ${left.type}`)
+                    error(`Incompatible type for operator "/": ${left.type}`)
                 }
                 break
             } default: {
@@ -342,7 +364,13 @@ export default class Analyzer {
         this.functionDepth++
 
         while (node.body[counter]) {
-            bodyNodes.push(this.analyzeStatement(node.body[counter]))
+
+            console.log(JSON.stringify(node.body[counter], null, 2))
+            
+            if (node.body[counter].type === 'FunctionDeclaration') {
+                console.log('Closure detected')
+            }
+            bodyNodes.push(this.analyzeStatement(node.body[counter]))   
             counter++
         }
 

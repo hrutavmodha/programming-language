@@ -17,9 +17,11 @@ export default class Generator {
     }
 
     generate() {
-        // Custom Magic Number "HM"
-        this.state.push(77)
-        this.state.push(72)
+        // Magic bytes for "Jay Bhavani, Jay Shivaji"
+        this.state.push(74) // 'J'
+        this.state.push(66) // 'B'
+        this.state.push(74) // 'J'
+        this.state.push(83) // 'S'
 
         this.state.push(21)
 
@@ -27,6 +29,7 @@ export default class Generator {
             this.generateStatement(this.state.peek())
             this.state.increment()
         }
+
         this.state.push(22)
 
         return this.state.getBytecode()
@@ -152,11 +155,33 @@ export default class Generator {
         })
 
         methods.forEach((method: any) => {
-            this.state.push(29)
+            this.state.push(38)
             const cpIdx = this.constantPool.store(method.name.name)
             this.state.push(cpIdx)
 
             this.state.push(method.arguments.length)
+
+            switch (method.accessModifier) {
+                case 'public': {
+                    this.state.push(1)
+                    break
+                } case 'private': {
+                    this.state.push(0)
+                    break
+                } default: {
+                    error(`Unknown access modifier "${method.accessModifier}" for property "${method.name.name}" of class "${node.name.name}"`)
+                }
+            }
+
+            /* Second byte represents staticity of member 
+                1 ==== static
+                0 ==== not static
+            */
+            if (method.isStatic) {
+                this.state.push(1)
+            } else {
+                this.state.push(0)
+            }
 
             this.state.push(14)
             const jmpIdx = this.state.length()
@@ -189,8 +214,6 @@ export default class Generator {
 
             this.state.update(jmpIdx, this.state.length())
         })
-
-
 
         this.state.push(22)
     }

@@ -1,112 +1,132 @@
 import type {
-    ClassSymbol,
-    ConstantSymbol,
-    FunctionSymbol,
-    PropertySymbol,
-    ScopeInterface,
-    ScopeStackInterface,
-    Symbol,
-    VariableSymbol,
-    MethodSymbol
+        ClassSymbol,
+        ConstantSymbol,
+        FunctionSymbol,
+        PropertySymbol,
+        ScopeInterface,
+        ScopeStackInterface,
+        Symbol,
+        VariableSymbol,
+        MethodSymbol,
+        ClosureSymbol
 } from '../../types/scope.d.ts'
 import error from './error.ts'
 
 export class Scope {
-    private symbols: ScopeInterface
+        private symbols: ScopeInterface
 
-    constructor() {
-        this.symbols = new Map<string, Symbol>()
-    }
-
-    public store(variable: string, value: any) {
-        if (this.symbols.has(variable)) {
-            error(`Variable "${variable}" is already declared`)
+        constructor() {
+                this.symbols = new Map<string, Symbol>()
         }
 
-        this.symbols.set(variable, value)
-    }
+        public store(variable: string, value: any) {
+            if (this.symbols.has(variable)) {
+                error(`Variable "${variable}" is already declared`)
+            }
 
-    public get(variable: string) {
-        if (!this.symbols.has(variable)) {
-            error(`Undefined variable "${variable}"`)
+            this.symbols.set(variable, value)
         }
 
-        return this.symbols.get(variable)
-    }
+        public get(variable: string) {
+            if (!this.symbols.has(variable)) {
+                error(`Undefined variable "${variable}"`)
+            }
 
-
-    public update(variable: string, value: any) {
-        if (!this.symbols.has(variable)) {
-            error(`Undefined variable "${variable}"`)
+            return this.symbols.get(variable)
         }
 
-        this.symbols.set(variable, value)
-    }
+
+        public update(variable: string, value: any) {
+            if (!this.symbols.has(variable)) {
+                error(`Undefined variable "${variable}"`)
+            }
+        
+            this.symbols.set(variable, value)
+        }
+}
+
+interface ScopeNode {
+    symbols: ScopeInterface
+    parent: ScopeNode | null
 }
 
 export class ScopeStack {
-    private scopeStack: ScopeStackInterface
+    private head: ScopeNode | null = null
 
     constructor() {
-        this.scopeStack = []
+        this.head = null
     }
 
     push(scope: ScopeInterface) {
-        this.scopeStack.push(scope)
+        this.head = {
+            symbols: scope,
+            parent: this.head
+        }
     }
 
     pop() {
-        return this.scopeStack.pop()
+        if (!this.head) {
+            return undefined
+        }
+        const symbols = this.head.symbols
+        this.head = this.head.parent
+        return symbols
     }
 
     peek() {
-        return this.scopeStack[this.scopeStack.length - 1]
+        return this.head ? this.head.symbols : undefined
     }
 
     length() {
-        return this.scopeStack.length
+        let count = 0
+        let current = this.head
+        while (current) {
+            count++
+            current = current.parent
+        }
+        return count
+    }
+
+    getHead() {
+        return this.head
+    }
+
+    getParentScope() {
+        return this.head.symbols
     }
 
     get(name: string): any {
-        const popped: ScopeInterface[] = []
+        let current = this.head
         let value: any = undefined
         let isFound = false
 
-        while (true) {
-            const scope = this.pop()
+        while (current) {
+            if (current.symbols.has(name)) {
+                const symbol = current.symbols.get(name)
+                // console.log('Symbol:', symbol)
 
-            if (!scope) {
-                break
-            }
-            popped.push(scope)
-
-            if (scope.has(name)) {
-                const symbol = scope.get(name)
-
-                if (symbol.type === 'variable' || symbol.type === 'constant') {
-                    value = symbol
-                    isFound = true
-                    break
-                } else if (symbol.type === 'function') {
-                    value = symbol
-                    isFound = true
-                    break
-                } else if (symbol.type === 'class') {
-                    value = symbol
-                    isFound = true
-                    break
-                } else {
-                    console.log('[scope.ts]: Symbol:', symbol)
-                    break
+                if (symbol) {
+                    if (symbol.type === 'variable' || symbol.type === 'constant') {
+                        value = symbol
+                        isFound = true
+                        break
+                    } else if (symbol.type === 'function' || symbol.type === 'closure') {
+                        value = symbol
+                        isFound = true
+                        break
+                    } else if (symbol.type === 'class') {
+                        value = symbol
+                        isFound = true
+                        break
+                    } else {
+                        console.log('[scope.ts]: Symbol:', symbol)
+                        break
+                    }
                 }
             }
-        }
 
-        for (let i = popped.length - 1; i >= 0; i--) {
-            const scopeToPush = popped[i]
-            if (scopeToPush) {
-                this.push(scopeToPush)
-            }
+            // console.log("current:", current)
+            current = current.parent
         }
 
         if (!isFound) {
@@ -116,6 +136,56 @@ export class ScopeStack {
         return value
     }
 
+    pushParentedScope(parent: any, scope: ScopeInterface) {
+        this.head = {
+            symbols: scope,
+            parent
+        }
+    }
+
+    storeClosure(
+        name: string,
+        arity: number,
+        returnType: string,
+        entryPoint: number,
+    ) {
+        if (!this.head) {
+            error('No active scope found')
+        }
+
+        this.head.symbols.set(name, {
+            type: 'closure',
+            arity,
+            returnType,
+            entryPoint,
+            parent: this.head
+        } as any)
+    }
+
+    storeMethod(
+        name: string,
+        arity: number,
+        isStatic: boolean,
+        accessModifier: 'private' | 'public',
+        returnType: string,
+        entryPoint: number
+    ) {
+        if (!this.head) {
+            error(`No active scope found`)
+        }
+
+        const prop: MethodSymbol = {
+            type: 'function',
+            isStatic,
+            accessModifier,
+            entryPoint,
+            arity,
+            returnType
+        }
+
+        this.head.symbols.set(name, prop)
+    }
+
     storeProperty(
         propertyName: string,
         isStatic: boolean,
@@ -123,9 +193,7 @@ export class ScopeStack {
         value: any,
         dataType: string
     ) {
-        const scope = this.pop()
-
-        if (!scope) {
+        if (!this.head) {
             error(`No active scope found`)
         }
 
@@ -137,17 +205,15 @@ export class ScopeStack {
             dataType
         }
 
-        scope.set(propertyName, prop)
-        this.push(scope)
+        this.head.symbols.set(propertyName, prop)
     }
 
     storeConstant(name: string, value: any): void {
-        const scope = this.pop()
-        if (!scope) {
+        if (!this.head) {
             error("No active scope")
         }
 
-        if (scope.has(name)) {
+        if (this.head.symbols.has(name)) {
             error(`Constant "${name}" is already declared`)
         }
 
@@ -156,8 +222,7 @@ export class ScopeStack {
             dataType: value !== null && value !== undefined ? typeof value : 'any',
             value: value
         }
-        scope.set(name, symbol)
-        this.push(scope)
+        this.head.symbols.set(name, symbol)
     }
 
     storeNativeFunction(name: string, arity: number, returnType: string, entryPoint: number): void {
@@ -168,21 +233,28 @@ export class ScopeStack {
             entryPoint
         }
 
-        if (!this.scopeStack[0]) {
-            this.scopeStack[0] = new Map<string, Symbol>()
+        if (!this.head) {
+            this.head = {
+                symbols: new Map<string, Symbol>(),
+                parent: null
+            }
+            this.head.symbols.set(name, symbol)
+            return
         }
 
-        this.scopeStack[0].set(name, symbol)
+        let current = this.head
+        while (current.parent) {
+            current = current.parent
+        }
+        current.symbols.set(name, symbol)
     }
 
     storeUserDefinedFunction(name: string, arity: number, returnType: string, entryPoint: number): void {
-        const scope = this.pop()
-
-        if (!scope) {
+        if (!this.head) {
             error('No active scope found')
         }
 
-        if (scope.has(name)) {
+        if (this.head.symbols.has(name)) {
             error(`Function "${name}" is already registered`)
         }
 
@@ -193,41 +265,33 @@ export class ScopeStack {
             entryPoint
         }
 
-        scope.set(name, symbol)
-
-        this.scopeStack.push(scope)
+        this.head.symbols.set(name, symbol)
     }
 
     storeClass(name: string): void {
+        if (!this.head) {
+            error('No active scope found')
+        }
+
+        if (this.head.symbols.has(name)) {
+            error(`Class "${name}" is already registered`)
+        }
+
         const symbol: ClassSymbol = {
             type: 'class',
             methods: new Map<string, MethodSymbol>(),
             properties: new Map<string, PropertySymbol>(),
         }
 
-        const scope = this.scopeStack.pop()
-
-        if (!scope) {
-            error('No active scope found')
-        }
-
-        if (scope.has(name)) {
-            error(`Class "${name}" is already registered`)
-        }
-
-        scope.set(name, symbol)
-
-        this.scopeStack.push(scope)
+        this.head.symbols.set(name, symbol)
     }
 
     storeVariable(name: string, value: any): void {
-        const scope = this.pop()
-        
-        if (!scope) {
+        if (!this.head) {
             error("No active scope")
         }
 
-        if (scope.has(name)) {
+        if (this.head.symbols.has(name)) {
             error(`Variable "${name}" is already declared`)
         }
         const symbol: Symbol = {
@@ -235,45 +299,31 @@ export class ScopeStack {
             dataType: value !== null && value !== undefined ? typeof value : 'any',
             value: value
         }
-        scope.set(name, symbol)
-        this.push(scope)
+        this.head.symbols.set(name, symbol)
     }
 
     updateVariable(name: string, value: any): void {
-        const popped: ScopeInterface[] = []
+        let current = this.head
         let isFound = false
 
-        while (true) {
-            const scope = this.pop()
+        while (current) {
+            if (current.symbols.has(name)) {
+                const symbol = current.symbols.get(name)
+                if (symbol) {
+                    isFound = true
 
-            if (!scope) {
-                break
-            }
-
-            popped.push(scope)
-
-            if (scope.has(name)) {
-
-                const symbol = scope.get(name)
-                isFound = true
-
-                if (symbol.type === 'variable') {
-                    const varSymbol = symbol as VariableSymbol
-                    varSymbol.value = value
-                    varSymbol.dataType = value !== null && value !== undefined ? typeof value : 'any'
-                    break
-                } else if (symbol.type === 'constant') {
-                    error(`Cannot re-assign the constant`)
-                    break
+                    if (symbol.type === 'variable') {
+                        const varSymbol = symbol as VariableSymbol
+                        varSymbol.value = value
+                        varSymbol.dataType = value !== null && value !== undefined ? typeof value : 'any'
+                        break
+                    } else if (symbol.type === 'constant') {
+                        error(`Cannot re-assign the constant`)
+                        break
+                    }
                 }
             }
-        }
-
-        for (let i = popped.length - 1; i >= 0; i--) {
-            const scopeToPush = popped[i]
-            if (scopeToPush) {
-                this.push(scopeToPush)
-            }
+            current = current.parent
         }
 
         if (!isFound) {
@@ -281,7 +331,13 @@ export class ScopeStack {
         }
     }
 
-    getScopeStack() {
-        return this.scopeStack
+    getScopeStack(): ScopeInterface[] {
+        const list: ScopeInterface[] = []
+        let current = this.head
+        while (current) {
+            list.push(current.symbols)
+            current = current.parent
+        }
+        return list.reverse()
     }
 }

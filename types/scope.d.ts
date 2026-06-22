@@ -1,5 +1,5 @@
 export interface BaseSymbol { 
-    type: 'variable' | 'constant' | 'function' | 'class'
+    type: 'variable' | 'constant' | 'function' | 'class' | 'closure'
 }
 
 export interface VariableSymbol extends BaseSymbol {
@@ -16,6 +16,10 @@ export interface FunctionSymbol extends BaseSymbol {
     arity: number
     returnType: string,
     entryPoint: number
+}
+
+export interface ClosureSymbol extends FunctionSymbol {
+    parent: Map<string, Symbol>
 }
 
 export interface PropertySymbol extends VariableSymbol {

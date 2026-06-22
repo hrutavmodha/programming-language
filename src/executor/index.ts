@@ -1,7 +1,7 @@
 import ExecutorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
 import { ScopeStack } from '../shared/scope.ts'
-import type { ClassSymbol, PropertySymbol, Symbol, VariableSymbol } from '../../types/scope.ts'
+import type { ClassSymbol, ClosureSymbol, PropertySymbol, Symbol, VariableSymbol } from '../../types/scope.ts'
 import { nativeFunctions } from '../shared/native-functions.ts'
 import error from '../shared/error.ts'
 import type { FunctionMetaData } from '../../types/functions.d.ts'
@@ -12,6 +12,7 @@ export default class Executor {
     private scopeStack: ScopeStack;
     private callStack: Array<FunctionMetaData>;
     private currentClass: string | null = null
+    private parentScope: any = null
 
     constructor(state: ExecutorState, constantPool: ConstantPool) {
         this.state = state
@@ -35,11 +36,18 @@ export default class Executor {
     }
 
     verify(instructions: Uint8Array) {
-        if (instructions[0] !== 77 || instructions[1] !== 72) {
-            error(`Cannot execute malicious bytecode payload`)
+        if (
+            instructions[0] !== 74 ||
+            instructions[1] !== 66 ||
+            instructions[2] !== 74 ||
+            instructions[3] !== 83
+        ) {
+            error(`Cannot execute malicious bytecode payload: Invalid Magic Header.`);
         } else {
-            this.state.increment()
-            this.state.increment()
+            this.state.increment();
+            this.state.increment();
+            this.state.increment();
+            this.state.increment();
         }
     }
 
@@ -159,7 +167,14 @@ export default class Executor {
                     this.state.push(a !== b)
                     break
                 } case 21: {
-                    this.scopeStack.push(new Map<string, Symbol>())
+                    const newScope = new Map<string, Symbol>()
+
+                    if (this.parentScope) {
+                        this.scopeStack.pushParentedScope(this.parentScope, newScope)
+                        this.parentScope = null
+                    } else {
+                        this.scopeStack.push(newScope)
+                    }
                     break
                 } case 22: {
                     if (this.currentClass !== null) {
@@ -232,8 +247,6 @@ export default class Executor {
                     const fnName = this.constantPool.get(fnIdx)
                     let Obj = this.scopeStack.get(fnName)
 
-                    // console.log('Object:', Obj)
-
                     if (Obj && (Obj.type === 'variable' || Obj.type === 'constant')) {
                         Obj = Obj.value
                     }
@@ -248,9 +261,24 @@ export default class Executor {
                             returnAddress: this.state.getCurrentInstructionPointer()
                         })
 
+                        
                         this.state.jump(Obj.entryPoint)
                         continue
+                        
+                    } else if (Obj && Obj.type === 'closure') {
+                        if (Obj.arity !== arity) {
+                            error(`Expected ${Obj.arity} arguments, but got ${arity}`)
+                        }
 
+                        this.callStack.push({
+                            scopeDepth: this.scopeStack.length(),
+                            returnAddress: this.state.getCurrentInstructionPointer()
+                        })
+                        
+                        this.parentScope = Obj.parent
+                        
+                        this.state.jump(Obj.entryPoint)
+                        continue
                     } else if (Obj && Obj.type === 'class') {
                         const properties = new Map<string, PropertySymbol>()
                         const init = Obj.methods.get('init')
@@ -307,7 +335,16 @@ export default class Executor {
 
                     const fnName = this.constantPool.get(fnNameIdx)
                     this.state.increment()
-                    this.scopeStack.storeUserDefinedFunction(fnName, this.state.peek(), 'any', this.state.getCurrentInstructionPointer() + 3)
+                    
+                    const closure: ClosureSymbol = {
+                        type: 'closure',
+                        parent: this.scopeStack.getParentScope(),
+                        arity: this.state.peek(),
+                        entryPoint: this.state.getCurrentInstructionPointer() + 3,
+                        returnType: 'any'
+                    }
+
+                    this.scopeStack.storeClosure(fnName, closure.arity, closure.returnType, closure.entryPoint)
                     break
                 } case 30: {
                     const callFrame = this.callStack.pop()
@@ -412,6 +449,30 @@ export default class Executor {
 
                     this.state.increment()
                     this.state.increment()
+                    break
+                } case 38: {
+                    this.state.increment()
+                    const methodIdx = this.state.peek()
+
+                    const methodName = this.constantPool.get(methodIdx)
+                    this.state.increment()
+
+                    const arity = this.state.peek()
+                    this.state.increment()
+
+                    const accessModifier = this.state.peek()
+                    this.state.increment()
+
+                    const isStatic = this.state.peek()
+
+                    this.scopeStack.storeMethod(
+                        methodName, arity,
+                        isStatic === 1,
+                        accessModifier === 0 ? 'private' : 'public',
+                        'any',
+                        this.state.getCurrentInstructionPointer() + 3
+                    )
+
                     break
                 } default: {
                     console.log(`Stuck at: ${this.state.getCurrentInstructionPointer()}: ${this.state.peek()}`)
