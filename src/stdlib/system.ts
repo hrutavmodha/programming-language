@@ -1,5 +1,3 @@
-import { exit as processExit } from 'process';
-
 export function getEnv(key: string): string | null {
     return process.env[key] || null;
 }
@@ -11,5 +9,5 @@ export function getArg(index: number): string | null {
 }
 
 export function exit(code: number): void {
-    processExit(code);
+    process.exit(code);
 }

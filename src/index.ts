@@ -93,7 +93,7 @@ export default class Interpreter {
 
 const args = process.argv.slice(2);
 let debug = false;
-let filePath: string | undefined;
+export let filePath: string | undefined;
 
 for (const arg of args) {
   if (arg === "--debug" || arg === "-d") {

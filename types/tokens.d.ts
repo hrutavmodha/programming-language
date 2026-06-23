@@ -3,5 +3,6 @@ export interface Token {
     lexeme: string,
     literal: string | null
     row?: number,
-    column?: number
+    column?: number,
+    length?: number
 }

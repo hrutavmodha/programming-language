@@ -1,4 +1,3 @@
-import error from '../shared/error.ts'
 import LexerState from './state.ts'
 import LexerUtils from './utils.ts'
 
@@ -132,7 +131,7 @@ export default class Lexer {
             this.state.increment()
         }
         if (this.state.advance() !== delimiter) {
-            error(`Unexpected end of string literal`)
+            this.state.reportError(`Unexpected end of string literal`)
         }
 
         this.state.push('STRING_LITERAL', lexeme, lexeme)
@@ -278,8 +277,10 @@ export default class Lexer {
                 continue
             }
 
+            this.state.recordStart()
+
             // Keywords and Identifiers
-            else if (this.utils.isAlphabet(this.state.peek())) {
+            if (this.utils.isAlphabet(this.state.peek())) {
                 this.tokenizeWord()
                 continue
             }
@@ -303,6 +304,7 @@ export default class Lexer {
 
             this.state.increment()
         }
+        this.state.recordStart()
         this.state.push('EndOfFile', '', null)
 
         return this.state.getTokens()

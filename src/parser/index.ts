@@ -48,7 +48,7 @@ export default class Parser {
                 return this.parseClassDeclaration()
             } default: {
                 const node = this.parseExpression()
-                this.state.expect('SEMI_COLON')
+                this.state.expect(';')
                 return node
             }
         }
@@ -211,7 +211,7 @@ export default class Parser {
         } else if (this.state.peek()?.type === 'OPENING_PARENTHESIS') {
             this.state.increment()
             const node = this.parseExpression()
-            this.state.expect('CLOSING_PARENTHESIS')
+            this.state.expect(')')
 
             return node
         }
@@ -229,12 +229,12 @@ export default class Parser {
                     args.push(this.parseExpression())
                     
                     while (this.state.peek()?.type === 'COMMA') {
-                        this.state.expect('COMMA')
+                        this.state.expect(',')
                         args.push(this.parseExpression())
                     }
                 }
 
-                this.state.expect('CLOSING_PARENTHESIS')
+                this.state.expect(')')
 
                 callee = {
                     type: 'CallExpression',
@@ -264,7 +264,7 @@ export default class Parser {
     }
 
     private parseVariableDeclaration(): any {
-        this.state.expect('KEYWORD_LET')
+        this.state.expect('let')
         
         const name = this.state.peek().lexeme
         let value: any = null
@@ -276,7 +276,7 @@ export default class Parser {
             value = this.parseExpression()
         }
 
-        this.state.expect('SEMI_COLON')
+        this.state.expect(';')
 
         return {
             type: 'VariableDeclaration',
@@ -285,16 +285,16 @@ export default class Parser {
     }
 
     private parseConstantDeclaration(): any {
-        this.state.expect('KEYWORD_CONST')
+        this.state.expect('const')
 
         const name = this.state.peek().lexeme
 
         this.state.expect('IDENTIFIER')
-        this.state.expect('EQUALS')
+        this.state.expect('=')
 
         const value = this.parseExpression()
 
-        this.state.expect('SEMI_COLON')
+        this.state.expect(';')
 
         return {
             type: 'ConstantDeclaration',
@@ -307,7 +307,7 @@ export default class Parser {
             type: 'BlockStatement',
             body: []
         }
-        this.state.expect('OPENING_CURLY_BRACE')
+        this.state.expect('{')
 
         while (!this.state.isAtEnd() && this.state.peek()?.type !== 'CLOSING_CURLY_BRACE') {
             const stmt = this.parseStatement()
@@ -317,12 +317,12 @@ export default class Parser {
             }
         }
 
-        this.state.expect('CLOSING_CURLY_BRACE')
+        this.state.expect('}')
         return node
     }
 
     private parseIfStatement(): any {
-        this.state.expect('KEYWORD_IF')
+        this.state.expect('if')
 
         const condition = this.parseExpression()
         const body = this.parseStatement()
@@ -351,11 +351,11 @@ export default class Parser {
 
         }
 
-        this.state.expect('KEYWORD_SWITCH')
+        this.state.expect('switch')
 
         node.discriminant = this.parseExpression()
 
-        this.state.expect('OPENING_CURLY_BRACE')
+        this.state.expect('{')
 
         while (this.state.peek().type === 'KEYWORD_CASE') {
             this.state.increment()
@@ -382,12 +382,12 @@ export default class Parser {
             })
         }
 
-        this.state.expect('CLOSING_CURLY_BRACE')
+        this.state.expect('}')
         return node
     }
 
     private parseWhileStatement(): any {
-        this.state.expect('KEYWORD_WHILE')
+        this.state.expect('while')
 
         const condition = this.parseExpression()
         const body = this.parseStatement()
@@ -400,29 +400,29 @@ export default class Parser {
     }
 
     private parseBreakStatement(): any {
-        this.state.expect('KEYWORD_BREAK')
-        this.state.expect('SEMI_COLON')
+        this.state.expect('break')
+        this.state.expect(';')
 
         return { type: 'BreakStatement' }
     }
 
     private parseContinueStatement(): any {
-        this.state.expect('KEYWORD_CONTINUE')
-        this.state.expect('SEMI_COLON')
+        this.state.expect('continue')
+        this.state.expect(';')
 
         return { type: 'ContinueStatement' }
     }
 
     private parseDoWhileStatement(): any {
-        this.state.expect('KEYWORD_DO')
+        this.state.expect('do')
 
         const body = this.parseStatement()
 
-        this.state.expect('KEYWORD_WHILE')
+        this.state.expect('while')
 
         const condition = this.parseExpression()
 
-        this.state.expect('SEMI_COLON')
+        this.state.expect(';')
 
         return {
             type: 'DoWhileStatement',
@@ -432,7 +432,7 @@ export default class Parser {
     }
 
     private parseForStatement(): any {
-        this.state.expect('KEYWORD_FOR')
+        this.state.expect('for')
 
         const peek = this.state.peek()
         let initializer: any
@@ -447,7 +447,7 @@ export default class Parser {
 
         const condition = this.parseExpression()
 
-        this.state.expect('SEMI_COLON')
+        this.state.expect(';')
 
         const update = this.parseExpression()
         const body = this.parseStatement()
@@ -459,7 +459,7 @@ export default class Parser {
     }
 
     private parseFunctionDeclaration(): any {
-        this.state.expect('KEYWORD_FUNCTION')
+        this.state.expect('function')
 
         const name = {
             type: 'Identifier',
@@ -468,7 +468,7 @@ export default class Parser {
         const args: Array<any> = []
 
         this.state.expect('IDENTIFIER')
-        this.state.expect('OPENING_PARENTHESIS')
+        this.state.expect('(')
         
 
         while (this.state.peek().type !== 'CLOSING_PARENTHESIS') {
@@ -486,7 +486,7 @@ export default class Parser {
             }
         }
 
-        this.state.expect('CLOSING_PARENTHESIS')
+        this.state.expect(')')
 
         const body = this.parseBlockStatement()
 
@@ -499,11 +499,11 @@ export default class Parser {
     }
 
     private parseReturnStatement(): any {
-        this.state.expect('KEYWORD_RETURN')
+        this.state.expect('return')
 
         const expression = this.parseExpression()
 
-        this.state.expect('SEMI_COLON')
+        this.state.expect(';')
 
         return {
             type: 'ReturnStatement',
@@ -512,7 +512,7 @@ export default class Parser {
     }
 
     private parseClassDeclaration(): any {
-        this.state.expect('KEYWORD_CLASS')
+        this.state.expect('class')
 
         const name = {
             type: 'Identifier',
@@ -536,7 +536,7 @@ export default class Parser {
             parent = null
         }
 
-        this.state.expect('OPENING_CURLY_BRACE')
+        this.state.expect('{')
         
         while (!this.state.isAtEnd() && this.state.peek().type !== 'CLOSING_CURLY_BRACE') {
             const maybeAccessModifier = this.state.peek()
@@ -565,7 +565,7 @@ export default class Parser {
 
                 value = this.parseExpression()
 
-                this.state.expect('SEMI_COLON')
+                this.state.expect(';')
             
                 const node = {
                     type: 'PropertyDeclaration',
@@ -594,7 +594,7 @@ export default class Parser {
                     }
                 }
 
-                this.state.expect('CLOSING_PARENTHESIS')
+                this.state.expect(')')
 
                 const methodBody = this.parseBlockStatement()
 
@@ -611,7 +611,7 @@ export default class Parser {
             }
         }
 
-        this.state.expect('CLOSING_CURLY_BRACE')
+        this.state.expect('}')
 
         return {
             type: 'ClassDeclaration', 
