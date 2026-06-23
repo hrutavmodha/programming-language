@@ -71,16 +71,12 @@ export default class ParserState {
         }
         
         if (hasError) {
-            const errorLine = readFileSync(filePath).toString().split('\n')[actualToken.row]
-            errStr += `File ${filePath}:${actualToken.row + 1}:${actualToken.column - 1}\n`
-            errStr += `${actualToken.row + 1} | `
-            errStr += errorLine
-            
+            const errorLine = readFileSync(filePath).toString().split('\n')[actualToken.row] || ''
+            errStr += `File ${filePath}:${actualToken.row + 1}:${actualToken.column}\n`
+            errStr += `${actualToken.row + 1} | ${errorLine}\n`
 
-            errStr +=actualToken.lexeme
-            errStr +='\n    '
-
-            for (let i = 0; i < actualToken.column; i++) {
+            const prefixLen = (actualToken.row + 1).toString().length + 3
+            for (let i = 0; i < prefixLen + actualToken.column; i++) {
                 errStr += ' '
             }
 

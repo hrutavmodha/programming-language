@@ -68,7 +68,7 @@ export default class Interpreter {
       console.log("\nAnalyzed AST:", JSON.stringify(analyzedAst, null, 2));
     }
 
-    const generatorState = new GeneratorState(ast);
+    const generatorState = new GeneratorState(analyzedAst);
     const generator = new Generator(generatorState);
     const bytecodes = generator.generate();
 

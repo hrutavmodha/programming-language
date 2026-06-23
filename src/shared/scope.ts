@@ -136,6 +136,17 @@ export class ScopeStack {
         return value
     }
 
+    has(name: string): boolean {
+        let current = this.head
+        while (current) {
+            if (current.symbols.has(name)) {
+                return true
+            }
+            current = current.parent
+        }
+        return false
+    }
+
     pushParentedScope(parent: any, scope: ScopeInterface) {
         this.head = {
             symbols: scope,

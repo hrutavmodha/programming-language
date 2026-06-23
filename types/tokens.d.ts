@@ -4,5 +4,6 @@ export interface Token {
     literal: string | null
     row?: number,
     column?: number,
-    length?: number
+    length?: number,
+    index?: number
 }

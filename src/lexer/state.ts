@@ -11,6 +11,7 @@ export default class LexerState {
     public column: number = 0
     private startRow: number = 0
     private startColumn: number = 0
+    private startIndex: number = 0
 
     constructor(newSource: string) {
         this.source = newSource
@@ -46,6 +47,7 @@ export default class LexerState {
     recordStart(): void {
         this.startRow = this.row
         this.startColumn = this.column
+        this.startIndex = this.cursor
     }
 
     reportError(msg: string) {
@@ -70,7 +72,8 @@ export default class LexerState {
         this.tokens.push({
             type, lexeme, literal,
             row: this.startRow, column: this.startColumn,
-            length: lexeme.length
+            length: lexeme.length,
+            index: this.startIndex
         })
     }
 

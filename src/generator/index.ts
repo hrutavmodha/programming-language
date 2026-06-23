@@ -2,7 +2,6 @@ import type { Node } from '../../types/nodes.d.ts'
 import GeneratorState from './state.ts'
 import ConstantPool from '../shared/constant-pool.ts'
 import LoopContextStack from './loop-context.ts'
-import error from '../shared/error.ts'
 import { nativeFunctions } from '../shared/native-functions.ts'
 
 export default class Generator {
@@ -106,7 +105,7 @@ export default class Generator {
                     methods.push(element)
                     break
                 default:
-                    error(`Unsupport class entity type found: "${element.type}"`)
+                    this.state.reportError(`Unsupported class entity type: "${element.type}"`, element)
             
             }
         })
@@ -139,7 +138,7 @@ export default class Generator {
                     this.state.push(0)
                     break
                 } default: {
-                    error(`Unknown access modifier "${property.accessModifier}" for property "${property.name.name}" of class "${node.name.name}"`)
+                    this.state.reportError(`Unknown access modifier "${property.accessModifier}" for property "${property.name.name}" of class "${node.name.name}"`, property)
                 }
             }
 
@@ -169,7 +168,7 @@ export default class Generator {
                     this.state.push(0)
                     break
                 } default: {
-                    error(`Unknown access modifier "${method.accessModifier}" for property "${method.name.name}" of class "${node.name.name}"`)
+                    this.state.reportError(`Unknown access modifier "${method.accessModifier}" for method "${method.name.name}" of class "${node.name.name}"`, method)
                 }
             }
 
@@ -309,10 +308,6 @@ export default class Generator {
     private generateBreakStatement() {
         const context = this.loopContextStack.peek()
         
-        if (!context) {
-            error(`Cannot break outside the loop`)
-        }
-
         this.state.push(14) // Jump
         const jmpIdx = this.state.length()
         this.state.push(-1)
@@ -322,10 +317,6 @@ export default class Generator {
 
     private generateContinueStatement() {
         const context = this.loopContextStack.peek()
-        
-        if (!context) {
-            error(`Cannot continue outside the loop`)
-        }
 
         this.state.push(14) // Jump
         const jmpIdx = this.state.length()
@@ -578,7 +569,7 @@ export default class Generator {
                     this.state.push(12)
                     this.state.push(varIdx)
                 } else {
-                    error(`Expected identifier or member expression, got ${node.left.type}`)
+                    this.state.reportError(`Expected identifier or member expression, got ${node.left.type}`, node.left)
                 }
                 break
             } case 'MemberExpression': {

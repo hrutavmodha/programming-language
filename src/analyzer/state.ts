@@ -1,5 +1,8 @@
 import type { Node, Program } from '../../types/nodes.d.ts'
 import { ScopeStack } from '../shared/scope.ts'
+import { filePath } from '../index.ts'
+import { readFileSync } from 'fs'
+import error from '../shared/error.ts'
 
 export default class AnalyzerState {
     private ast: Program;
@@ -18,7 +21,29 @@ export default class AnalyzerState {
         this.scopeStack = new ScopeStack()
     }
     
+    reportError(msg: string, node?: Node) {
+        const targetNode = node || this.peek()
+        const row = targetNode?.row ?? 0
+        const column = targetNode?.column ?? 0
 
+        const fc = readFileSync(filePath).toString()
+        const fcArr = fc.split('\n')
+        const errorLine = fcArr[row] || ''
+
+        let errStr = ''
+        errStr += 'Error: ' + msg + '\n'
+        errStr += `File ${filePath}:${row + 1}:${column}\n`
+        errStr += `${row + 1} | ${errorLine}\n`
+
+        const prefixLen = (row + 1).toString().length + 3
+        for (let i = 0; i < prefixLen + column; i++) {
+            errStr += ' '
+        }
+        errStr += '^'
+        
+        error(errStr)
+
+    }
 
     peek(offset: number = 0) {
         return this.ast.body[this.cursor + offset]
