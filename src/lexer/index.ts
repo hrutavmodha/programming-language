@@ -92,6 +92,15 @@ export default class Lexer {
             } case 'this': {
                 this.state.push('KEYWORD_THIS', lexeme, null)
                 break
+            } case 'attempt': {
+                this.state.push('KEYWORD_ATTEMPT', lexeme, null)
+                break
+            } case 'accept': {
+                this.state.push('KEYWORD_ACCEPT', lexeme, null)
+                break
+            } case 'lastly': {
+                this.state.push('KEYWORD_LASTLY', lexeme, null)
+                break
             } default: {
                 this.state.push('IDENTIFIER', lexeme, null)
             }

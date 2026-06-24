@@ -70,6 +70,8 @@ export default class Parser {
                 return this.parseReturnStatement()
             } case 'KEYWORD_CLASS': {
                 return this.parseClassDeclaration()
+            } case 'KEYWORD_ATTEMPT': {
+                return this.parseAttemptStatement()
             } default: {
                 const node = this.parseExpression()
                 this.state.expect(';')
@@ -667,5 +669,41 @@ export default class Parser {
             parent,
             name, body
         })
+    }
+
+    private parseAttemptStatement() {
+        const node: any = {
+            type: 'AttemptStatement',
+            body: [],
+            accept: [],
+            lastly: null
+        }
+        this.state.expect('attempt')
+
+        node.body = this.parseBlockStatement()
+
+        if (this.state.peek().lexeme !== 'accept') {
+            node.accept = null
+        }
+
+        while (this.state.peek().lexeme === 'accept') {
+            this.state.increment()
+            const errorName = this.parsePrimary()
+            const errorBody = this.parseBlockStatement()
+            
+            node.accept.push({
+                type: 'AcceptStatement',
+                errorName,
+                body: errorBody
+            })
+        }
+
+        if (this.state.peek().lexeme === 'lastly') {
+            this.state.increment()
+
+            node.lastly = this.parseBlockStatement()
+        }
+
+        return node
     }
 }
